@@ -438,6 +438,17 @@ export const ClubifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const removeChannel = (clubId: string, channelId: string) => {
     setClubs(clubs.map(club => {
       if (club.id === clubId) {
+        // Check if this channel is active
+        if (activeChannel?.id === channelId) {
+          // Set first available channel as active if this one is removed
+          const remainingChannels = club.channels.filter(ch => ch.id !== channelId);
+          if (remainingChannels.length > 0) {
+            setActiveChannelState(remainingChannels[0]);
+          } else {
+            setActiveChannelState(null);
+          }
+        }
+        
         return {
           ...club,
           channels: club.channels.filter(channel => channel.id !== channelId)
@@ -457,6 +468,9 @@ export const ClubifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       return club;
     }));
+    
+    // Also remove this member from any private channels they might have access to
+    // In a real app, you would need to handle this more carefully
   };
 
   const promoteMember = (clubId: string, memberId: string) => {

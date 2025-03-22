@@ -26,7 +26,17 @@ import {
 
 const ClubSettings = () => {
   const { clubId } = useParams<{ clubId: string }>();
-  const { clubs, setActiveClub, activeClub, currentUser, leaveClub } = useClubify();
+  const { 
+    clubs, 
+    setActiveClub, 
+    activeClub, 
+    currentUser, 
+    updateClub, 
+    addChannel, 
+    removeChannel, 
+    removeMember, 
+    promoteMember 
+  } = useClubify();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -36,6 +46,7 @@ const ClubSettings = () => {
   const [clubAvatar, setClubAvatar] = useState('');
   const [clubBanner, setClubBanner] = useState('');
   const [newChannelName, setNewChannelName] = useState('');
+  const [deletingChannelId, setDeletingChannelId] = useState<string | null>(null);
   const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
   const [promotingMemberId, setPromotingMemberId] = useState<string | null>(null);
   
@@ -100,8 +111,13 @@ const ClubSettings = () => {
   };
   
   const handleSaveGeneral = () => {
-    // We would save the changes to the API here
-    // For now just show a toast
+    updateClub(club.id, {
+      name: clubName,
+      description: clubDescription,
+      avatar: clubAvatar,
+      banner: clubBanner
+    });
+    
     toast({
       title: "Settings saved",
       description: "Your club settings have been updated."
@@ -118,8 +134,8 @@ const ClubSettings = () => {
       return;
     }
     
-    // We would save the new channel to the API here
-    // For now just show a toast
+    addChannel(club.id, newChannelName.trim());
+    
     toast({
       title: "Channel created",
       description: `${newChannelName} channel has been created.`
@@ -128,31 +144,44 @@ const ClubSettings = () => {
   };
   
   const handleDeleteChannel = (channelId: string, channelName: string) => {
-    // We would delete the channel from the API here
-    // For now just show a toast
+    if (channelName === 'general') {
+      toast({
+        title: "Cannot delete general channel",
+        description: "The general channel cannot be deleted.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    removeChannel(club.id, channelId);
+    
     toast({
       title: "Channel deleted",
       description: `${channelName} channel has been deleted.`
     });
+    
+    setDeletingChannelId(null);
   };
   
   const handleRemoveMember = (memberId: string) => {
-    // We would remove the member from the API here
-    // For now just show a toast
+    removeMember(club.id, memberId);
+    
     toast({
       title: "Member removed",
       description: "The member has been removed from the club."
     });
+    
     setDeletingMemberId(null);
   };
   
   const handlePromoteMember = (memberId: string) => {
-    // We would promote the member to moderator from the API here
-    // For now just show a toast
+    promoteMember(club.id, memberId);
+    
     toast({
       title: "Member promoted",
       description: "The member has been promoted to moderator."
     });
+    
     setPromotingMemberId(null);
   };
   
@@ -286,13 +315,41 @@ const ClubSettings = () => {
                           </div>
                           
                           {channel.name !== 'general' && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleDeleteChannel(channel.id, channel.name)}
-                            >
-                              <Trash className="h-4 w-4 text-destructive" />
-                            </Button>
+                            <Dialog open={deletingChannelId === channel.id} onOpenChange={(open) => {
+                              if (!open) setDeletingChannelId(null);
+                            }}>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => setDeletingChannelId(channel.id)}
+                                >
+                                  <Trash className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Delete Channel</DialogTitle>
+                                  <DialogDescription>
+                                    Are you sure you want to delete the #{channel.name} channel? This will permanently remove all messages and cannot be undone.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <DialogFooter>
+                                  <Button 
+                                    variant="outline" 
+                                    onClick={() => setDeletingChannelId(null)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button 
+                                    variant="destructive"
+                                    onClick={() => handleDeleteChannel(channel.id, channel.name)}
+                                  >
+                                    Delete Channel
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
                           )}
                         </div>
                       ))}
@@ -338,7 +395,9 @@ const ClubSettings = () => {
                           
                           {memberId !== club.admin && (
                             <div className="flex gap-2">
-                              <Dialog>
+                              <Dialog open={promotingMemberId === memberId} onOpenChange={(open) => {
+                                if (!open) setPromotingMemberId(null);
+                              }}>
                                 <DialogTrigger asChild>
                                   <Button 
                                     variant="outline" 
@@ -371,7 +430,9 @@ const ClubSettings = () => {
                                 </DialogContent>
                               </Dialog>
                               
-                              <Dialog>
+                              <Dialog open={deletingMemberId === memberId} onOpenChange={(open) => {
+                                if (!open) setDeletingMemberId(null);
+                              }}>
                                 <DialogTrigger asChild>
                                   <Button 
                                     variant="outline" 
