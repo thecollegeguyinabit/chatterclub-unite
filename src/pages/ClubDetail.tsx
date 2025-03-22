@@ -7,7 +7,7 @@ import ClubSidebar from '@/components/ClubSidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Users, MessageSquare, Bell, BellOff } from 'lucide-react';
+import { CalendarDays, Users, MessageSquare, Bell, BellOff, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ClubDetail = () => {
@@ -131,6 +131,15 @@ const ClubDetail = () => {
                           <Bell className="mr-2 h-4 w-4" />
                           Notifications
                         </Button>
+                        
+                        {isAdmin && (
+                          <Link to={`/club/${club.id}/settings`}>
+                            <Button variant="outline">
+                              <Settings className="mr-2 h-4 w-4" />
+                              Settings
+                            </Button>
+                          </Link>
+                        )}
                         
                         {!isAdmin && (
                           <Button 

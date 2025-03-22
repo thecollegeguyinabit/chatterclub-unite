@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 // Types
@@ -7,6 +6,7 @@ export type User = {
   name: string;
   avatar: string;
   email: string;
+  role?: 'admin' | 'moderator' | 'member';
 };
 
 export type Message = {
@@ -66,6 +66,13 @@ type ClubifyContextType = {
   setActiveClub: (clubId: string | null) => void;
   setActiveChannel: (channelId: string | null) => void;
   setActiveChat: (userId: string | null) => void;
+  
+  // New actions for club settings
+  updateClub: (clubId: string, data: Partial<Club>) => void;
+  addChannel: (clubId: string, channelName: string) => void;
+  removeChannel: (clubId: string, channelId: string) => void;
+  removeMember: (clubId: string, memberId: string) => void;
+  promoteMember: (clubId: string, memberId: string) => void;
 };
 
 // Mock data
@@ -401,6 +408,63 @@ export const ClubifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setActiveChannelState(null);
   };
 
+  const updateClub = (clubId: string, data: Partial<Club>) => {
+    setClubs(clubs.map(club => {
+      if (club.id === clubId) {
+        return { ...club, ...data };
+      }
+      return club;
+    }));
+  };
+
+  const addChannel = (clubId: string, channelName: string) => {
+    setClubs(clubs.map(club => {
+      if (club.id === clubId) {
+        const newChannel: Channel = {
+          id: Math.random().toString(36).substr(2, 9),
+          name: channelName,
+          messages: [],
+          isPrivate: false
+        };
+        return {
+          ...club,
+          channels: [...club.channels, newChannel]
+        };
+      }
+      return club;
+    }));
+  };
+
+  const removeChannel = (clubId: string, channelId: string) => {
+    setClubs(clubs.map(club => {
+      if (club.id === clubId) {
+        return {
+          ...club,
+          channels: club.channels.filter(channel => channel.id !== channelId)
+        };
+      }
+      return club;
+    }));
+  };
+
+  const removeMember = (clubId: string, memberId: string) => {
+    setClubs(clubs.map(club => {
+      if (club.id === clubId) {
+        return {
+          ...club,
+          members: club.members.filter(id => id !== memberId)
+        };
+      }
+      return club;
+    }));
+  };
+
+  const promoteMember = (clubId: string, memberId: string) => {
+    // In a real app, you would update the member's role in the database
+    // For this demo we'll just show a console.log
+    console.log(`Promoted member ${memberId} to moderator in club ${clubId}`);
+  };
+
   const value = {
     currentUser,
     isAuthenticated,
@@ -420,7 +484,13 @@ export const ClubifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     sendMessage,
     setActiveClub,
     setActiveChannel,
-    setActiveChat
+    setActiveChat,
+    
+    updateClub,
+    addChannel,
+    removeChannel,
+    removeMember,
+    promoteMember
   };
 
   return (
