@@ -4,6 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useClubify } from '@/context/ClubifyContext';
 import Navbar from '@/components/Navbar';
 import ClubSidebar from '@/components/ClubSidebar';
+import ClubCalendar from '@/components/ClubCalendar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -168,22 +169,26 @@ const ClubDetail = () => {
                   <p className="text-gray-700 whitespace-pre-line">{club.description}</p>
                 </div>
                 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold">Upcoming Events</h2>
-                    <Button variant="outline" size="sm">View All</Button>
-                  </div>
-                  
-                  <div className="text-center py-8 text-gray-500">
-                    <CalendarDays className="mx-auto h-12 w-12 text-gray-300 mb-2" />
-                    <p>No upcoming events</p>
-                    {isAdmin && (
-                      <Button className="mt-4" size="sm">
-                        Create Event
+                {/* Club Calendar Component */}
+                {isMember && clubId && (
+                  <ClubCalendar clubId={clubId} />
+                )}
+                
+                {!isMember && (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-xl font-semibold">Upcoming Events</h2>
+                    </div>
+                    
+                    <div className="text-center py-8 text-gray-500">
+                      <CalendarDays className="mx-auto h-12 w-12 text-gray-300 mb-2" />
+                      <p>Join this club to see and create events</p>
+                      <Button className="mt-4" size="sm" onClick={handleJoinClub}>
+                        Join Club
                       </Button>
-                    )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               
               <div className="space-y-8 animate-slideInRight">
