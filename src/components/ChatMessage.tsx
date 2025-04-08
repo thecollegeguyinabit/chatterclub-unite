@@ -44,21 +44,21 @@ const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
   
   return (
     <div className={cn(
-      "group flex items-start gap-3 px-4 py-2 hover:bg-gray-50 transition-colors",
+      "group flex items-start gap-3 px-4 py-2 hover:bg-gray-50 transition-colors w-full",
       isCurrentUser && "flex-row-reverse"
     )}>
       {showAvatar && !isCurrentUser ? (
-        <Avatar className="h-8 w-8 mt-0.5">
+        <Avatar className="h-8 w-8 mt-0.5 flex-shrink-0">
           <AvatarImage src={sender?.avatar} alt={sender?.name} />
           <AvatarFallback>{sender?.name ? getInitials(sender.name) : 'U'}</AvatarFallback>
         </Avatar>
       ) : showAvatar ? (
-        <div className="h-8 w-8"></div>
-      ) : null}
+        <div className="h-8 w-8 flex-shrink-0"></div>
+      ) : <div className="w-8 flex-shrink-0"></div>}
       
       <div className={cn(
-        "flex-1 max-w-[80%]",
-        isCurrentUser && "items-end"
+        "flex flex-col max-w-3xl w-full",
+        isCurrentUser ? "items-end" : "items-start"
       )}>
         {showAvatar && !isCurrentUser && (
           <div className="flex items-center mb-1 gap-2">
@@ -68,12 +68,12 @@ const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
         )}
         
         <div className={cn(
-          "rounded-2xl px-4 py-2 inline-block",
+          "rounded-2xl px-4 py-2",
           isCurrentUser ? 
             "bg-clubify-500 text-white" : 
             "bg-gray-100 text-gray-800"
         )}>
-          <p className="whitespace-pre-wrap">{message.text}</p>
+          <p className="whitespace-pre-wrap break-words">{message.text}</p>
         </div>
         
         <div className={cn(

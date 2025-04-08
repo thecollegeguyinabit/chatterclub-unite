@@ -112,11 +112,11 @@ const DirectChat = () => {
   }, [] as Array<{ senderId: string, messages: typeof activeChat.messages }>);
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen w-screen flex flex-col overflow-hidden">
       <Navbar />
       
-      <main className="flex-1 pt-16 flex flex-col">
-        <div className="border-b border-gray-200 py-3 px-4 flex items-center justify-between shadow-sm">
+      <main className="flex-1 flex flex-col pt-16 h-[calc(100vh-4rem)] w-full max-w-full">
+        <div className="border-b border-gray-200 py-3 px-4 flex items-center justify-between shadow-sm bg-white z-10">
           <div className="flex items-center">
             <Button 
               variant="ghost" 
@@ -151,8 +151,8 @@ const DirectChat = () => {
           </div>
         </div>
         
-        <ScrollArea ref={scrollRef} className="flex-1 p-4">
-          <div className="space-y-1">
+        <ScrollArea ref={scrollRef} className="flex-1 w-full h-full overflow-y-auto">
+          <div className="p-4 w-full space-y-1">
             {/* Welcome message */}
             {activeChat.messages.length === 0 && (
               <div className="text-center py-8 animate-fadeIn">
@@ -169,7 +169,7 @@ const DirectChat = () => {
             
             {/* Messages */}
             {groupedMessages.map((group, groupIndex) => (
-              <div key={`group-${groupIndex}`}>
+              <div key={`group-${groupIndex}`} className="w-full">
                 {group.messages.map((message, messageIndex) => (
                   <ChatMessage 
                     key={message.id} 
@@ -182,8 +182,8 @@ const DirectChat = () => {
           </div>
         </ScrollArea>
         
-        <div className="p-4 border-t border-gray-200 bg-white shadow-inner">
-          <form onSubmit={handleSendMessage} className="space-y-2">
+        <div className="p-4 border-t border-gray-200 bg-white shadow-inner w-full">
+          <form onSubmit={handleSendMessage} className="space-y-2 w-full">
             {isExpanded ? (
               <Textarea 
                 placeholder={`Message ${otherUser.name}`}
