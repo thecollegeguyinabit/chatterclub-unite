@@ -50,7 +50,6 @@ function Calendar({
         day_range_middle:
           "aria-selected:bg-accent aria-selected:text-accent-foreground",
         day_hidden: "invisible",
-        day_eventDay: "border-b-2 border-clubify-500",
         ...classNames,
       }}
       components={{

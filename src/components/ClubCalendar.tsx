@@ -95,6 +95,20 @@ const ClubCalendar = ({ clubId }: ClubCalendarProps) => {
     );
   };
   
+  // Modify the styling of days with events using the modifiers prop instead
+  const modifiers = {
+    eventDay: datesWithEvents,
+  };
+  
+  const modifiersStyles = {
+    eventDay: {
+      fontWeight: 'bold',
+      textDecoration: 'underline',
+      textDecorationColor: '#8B5CF6',
+      textDecorationThickness: '2px',
+    }
+  };
+  
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <div className="flex items-center justify-between mb-4">
@@ -206,17 +220,8 @@ const ClubCalendar = ({ clubId }: ClubCalendarProps) => {
               selected: "bg-primary text-primary-foreground",
               today: "bg-accent text-accent-foreground",
             }}
-            modifiers={{
-              eventDay: (date) => isDayWithEvents(date),
-            }}
-            modifiersStyles={{
-              eventDay: {
-                fontWeight: 'bold',
-                textDecoration: 'underline',
-                textDecorationColor: '#8B5CF6',
-                textDecorationThickness: '2px',
-              }
-            }}
+            modifiers={modifiers}
+            modifiersStyles={modifiersStyles}
           />
         </div>
         
