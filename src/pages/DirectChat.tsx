@@ -1,11 +1,13 @@
+
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useClubify } from '@/context/ClubifyContext';
 import Navbar from '@/components/Navbar';
 import ChatMessage from '@/components/ChatMessage';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Send, Smile, Plus, ArrowLeft, Phone, Video, Info } from 'lucide-react';
+import { Send, Smile, Plus, ArrowLeft, Phone, Video, Info, Paperclip, Image as ImageIcon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -15,6 +17,7 @@ const DirectChat = () => {
   const [message, setMessage] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const [isExpanded, setIsExpanded] = useState(false);
   
   // Set active chat based on URL params
   useEffect(() => {
@@ -56,6 +59,7 @@ const DirectChat = () => {
       if (recipientId) {
         sendMessage(message, undefined, recipientId);
         setMessage('');
+        setIsExpanded(false);
       }
     }
   };
@@ -112,7 +116,7 @@ const DirectChat = () => {
       <Navbar />
       
       <main className="flex-1 pt-16 flex flex-col">
-        <div className="border-b border-gray-200 py-3 px-4 flex items-center justify-between">
+        <div className="border-b border-gray-200 py-3 px-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center">
             <Button 
               variant="ghost" 
@@ -178,40 +182,84 @@ const DirectChat = () => {
           </div>
         </ScrollArea>
         
-        <div className="p-4 border-t border-gray-200">
-          <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-            <Button 
-              type="button" 
-              variant="ghost" 
-              size="icon" 
-              className="flex-shrink-0"
-            >
-              <Plus className="h-5 w-5 text-gray-500" />
-            </Button>
+        <div className="p-4 border-t border-gray-200 bg-white shadow-inner">
+          <form onSubmit={handleSendMessage} className="space-y-2">
+            {isExpanded ? (
+              <Textarea 
+                placeholder={`Message ${otherUser.name}`}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="w-full resize-none transition-all focus-visible:ring-clubify-500"
+                rows={3}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (message.trim()) handleSendMessage(e);
+                  }
+                }}
+                autoFocus
+              />
+            ) : (
+              <Input
+                placeholder={`Message ${otherUser.name}`}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="w-full bg-gray-50 border-gray-200 focus-visible:ring-clubify-500"
+                onFocus={() => setIsExpanded(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (message.trim()) handleSendMessage(e);
+                  }
+                }}
+              />
+            )}
             
-            <Input
-              placeholder={`Message ${otherUser.name}`}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="flex-1"
-            />
-            
-            <Button 
-              type="button" 
-              variant="ghost" 
-              size="icon" 
-              className="flex-shrink-0"
-            >
-              <Smile className="h-5 w-5 text-gray-500" />
-            </Button>
-            
-            <Button 
-              type="submit" 
-              className="flex-shrink-0" 
-              disabled={!message.trim()}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-1">
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                >
+                  <ImageIcon className="h-5 w-5" />
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                >
+                  <Paperclip className="h-5 w-5" />
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                >
+                  <Smile className="h-5 w-5" />
+                </Button>
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="bg-clubify-500 hover:bg-clubify-600 transition-colors" 
+                disabled={!message.trim()}
+              >
+                <Send className="h-4 w-4 mr-1" />
+                Send
+              </Button>
+            </div>
           </form>
         </div>
       </main>

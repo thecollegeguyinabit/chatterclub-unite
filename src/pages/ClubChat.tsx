@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useClubify } from '@/context/ClubifyContext';
@@ -5,8 +6,9 @@ import Navbar from '@/components/Navbar';
 import ClubSidebar from '@/components/ClubSidebar';
 import ChatMessage from '@/components/ChatMessage';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Send, Plus, Hash, PlusCircle, Smile } from 'lucide-react';
+import { Send, Plus, Hash, PlusCircle, Smile, Paperclip, Image as ImageIcon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const ClubChat = () => {
@@ -14,6 +16,7 @@ const ClubChat = () => {
   const { clubs, activeClub, activeChannel, setActiveClub, setActiveChannel, sendMessage, currentUser } = useClubify();
   const [message, setMessage] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   // Set active club and channel based on URL params
   useEffect(() => {
@@ -58,6 +61,7 @@ const ClubChat = () => {
     if (message.trim() && currentUser) {
       sendMessage(message, activeChannel.id);
       setMessage('');
+      setIsExpanded(false);
     }
   };
   
@@ -94,7 +98,7 @@ const ClubChat = () => {
         <ClubSidebar />
         
         <div className="flex-1 flex flex-col">
-          <div className="border-b border-gray-200 py-3 px-4 flex items-center justify-between">
+          <div className="border-b border-gray-200 py-3 px-4 flex items-center justify-between shadow-sm">
             <div className="flex items-center">
               <Hash className="h-5 w-5 text-gray-500 mr-2" />
               <h2 className="font-medium">{activeChannel.name}</h2>
@@ -110,7 +114,7 @@ const ClubChat = () => {
           
           <ScrollArea ref={scrollRef} className="flex-1 p-4">
             <div className="space-y-1">
-              {/* Welome message */}
+              {/* Welcome message */}
               {activeChannel.messages.length === 0 && (
                 <div className="text-center py-8 animate-fadeIn">
                   <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-clubify-50 text-clubify-600 mb-4">
@@ -138,40 +142,84 @@ const ClubChat = () => {
             </div>
           </ScrollArea>
           
-          <div className="p-4 border-t border-gray-200">
-            <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="icon" 
-                className="flex-shrink-0"
-              >
-                <Plus className="h-5 w-5 text-gray-500" />
-              </Button>
+          <div className="p-4 border-t border-gray-200 bg-white shadow-inner">
+            <form onSubmit={handleSendMessage} className="space-y-2">
+              {isExpanded ? (
+                <Textarea 
+                  placeholder={`Message #${activeChannel.name}`}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="w-full resize-none transition-all focus-visible:ring-clubify-500"
+                  rows={3}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (message.trim()) handleSendMessage(e);
+                    }
+                  }}
+                  autoFocus
+                />
+              ) : (
+                <Input
+                  placeholder={`Message #${activeChannel.name}`}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="w-full bg-gray-50 border-gray-200 focus-visible:ring-clubify-500"
+                  onFocus={() => setIsExpanded(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (message.trim()) handleSendMessage(e);
+                    }
+                  }}
+                />
+              )}
               
-              <Input
-                placeholder={`Message #${activeChannel.name}`}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="flex-1"
-              />
-              
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="icon" 
-                className="flex-shrink-0"
-              >
-                <Smile className="h-5 w-5 text-gray-500" />
-              </Button>
-              
-              <Button 
-                type="submit" 
-                className="flex-shrink-0" 
-                disabled={!message.trim()}
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-1">
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                  >
+                    <ImageIcon className="h-5 w-5" />
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                  >
+                    <Paperclip className="h-5 w-5" />
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                  >
+                    <Smile className="h-5 w-5" />
+                  </Button>
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="bg-clubify-500 hover:bg-clubify-600 transition-colors" 
+                  disabled={!message.trim()}
+                >
+                  <Send className="h-4 w-4 mr-1" />
+                  Send
+                </Button>
+              </div>
             </form>
           </div>
         </div>
