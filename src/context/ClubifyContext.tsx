@@ -73,6 +73,7 @@ type ClubifyContextType = {
   removeChannel: (clubId: string, channelId: string) => void;
   removeMember: (clubId: string, memberId: string) => void;
   promoteMember: (clubId: string, memberId: string) => void;
+  deleteMessage: (messageId: string, clubId: string) => void;
 };
 
 // Mock data
@@ -479,6 +480,21 @@ export const ClubifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     console.log(`Promoted member ${memberId} to moderator in club ${clubId}`);
   };
 
+  const deleteMessage = (messageId: string, clubId: string) => {
+    setClubs(clubs.map(club => {
+      if (club.id === clubId) {
+        return {
+          ...club,
+          channels: club.channels.map(channel => ({
+            ...channel,
+            messages: channel.messages.filter(msg => msg.id !== messageId)
+          }))
+        };
+      }
+      return club;
+    }));
+  };
+
   const value = {
     currentUser,
     isAuthenticated,
@@ -504,7 +520,8 @@ export const ClubifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addChannel,
     removeChannel,
     removeMember,
-    promoteMember
+    promoteMember,
+    deleteMessage
   };
 
   return (

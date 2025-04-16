@@ -1,10 +1,16 @@
 import { useState, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Heart, Reply, MoreHorizontal } from 'lucide-react';
+import { Heart, Reply, MoreHorizontal, Trash2 } from 'lucide-react';
 import { useClubify, Message } from '@/context/ClubifyContext';
 import { cn } from '@/lib/utils';
 import EmojiPicker from './EmojiPicker';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 const mockUsers = {
   '1': { name: 'John Doe', avatar: 'https://ui-avatars.com/api/?name=John+Doe' },
@@ -19,7 +25,7 @@ interface ChatMessageProps {
 }
 
 const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
-  const { currentUser } = useClubify();
+  const { currentUser, activeClub, deleteMessage } = useClubify();
   const [liked, setLiked] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -27,6 +33,11 @@ const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
   const isCurrentUser = message.senderId === currentUser?.id;
   const sender = mockUsers[message.senderId as keyof typeof mockUsers];
   
+  const isAdminOrModerator = currentUser && activeClub && (
+    activeClub.admin === currentUser.id ||
+    currentUser.role === 'moderator'
+  );
+
   const formatTime = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
       hour: 'numeric',
@@ -80,96 +91,117 @@ const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
     setLiked(true);
   };
 
-  return (
-    <div className={cn(
-      "group flex items-start gap-3 px-4 py-2 hover:bg-gray-50 transition-colors w-full",
-      isCurrentUser && "flex-row-reverse"
-    )}>
-      {showAvatar && !isCurrentUser ? (
-        <Avatar className="h-8 w-8 mt-0.5 flex-shrink-0">
-          <AvatarImage src={sender?.avatar} alt={sender?.name} />
-          <AvatarFallback>{sender?.name ? getInitials(sender.name) : 'U'}</AvatarFallback>
-        </Avatar>
-      ) : showAvatar ? (
-        <div className="h-8 w-8 flex-shrink-0"></div>
-      ) : <div className="w-8 flex-shrink-0"></div>}
-      
-      <div className={cn(
-        "flex flex-col max-w-3xl w-full",
-        isCurrentUser ? "items-end" : "items-start"
-      )}>
-        {showAvatar && !isCurrentUser && (
-          <div className="flex items-center mb-1 gap-2">
-            <span className="font-medium text-sm">{sender?.name}</span>
-            <span className="text-xs text-gray-500">{formatTime(message.timestamp)}</span>
-          </div>
-        )}
-        
-        <div className={cn(
-          "rounded-2xl px-4 py-2",
-          isCurrentUser ? 
-            "bg-clubify-500 text-white" : 
-            "bg-gray-100 text-gray-800"
-        )}>
-          <p className="whitespace-pre-wrap break-words">{message.text}</p>
-        </div>
-        
-        <div className={cn(
-          "flex items-center mt-1 gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
-          isCurrentUser && "justify-end"
-        )}>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={handleReactionClick}
-          >
-            <Heart className={cn(
-              "h-3.5 w-3.5",
-              liked ? "fill-red-500 text-red-500" : "text-gray-500"
-            )} />
-          </Button>
-          
-          <EmojiPicker onEmojiSelect={handleEmojiSelect} />
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={handleImageButtonClick}
-          >
-            <Reply className="h-3.5 w-3.5 text-gray-500" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={handleFileButtonClick}
-          >
-            <MoreHorizontal className="h-3.5 w-3.5 text-gray-500" />
-          </Button>
-          
-          {!showAvatar && (
-            <span className="text-xs text-gray-500">{formatTime(message.timestamp)}</span>
-          )}
-        </div>
-      </div>
+  const handleDeleteMessage = () => {
+    if (activeClub && isAdminOrModerator) {
+      deleteMessage(message.id, activeClub.id);
+    }
+  };
 
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleFileChange} 
-        style={{ display: 'none' }} 
-      />
-      <input 
-        type="file" 
-        ref={imageInputRef} 
-        accept="image/*" 
-        onChange={handleImageChange} 
-        style={{ display: 'none' }} 
-      />
-    </div>
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div className={cn(
+          "group flex items-start gap-3 px-4 py-2 hover:bg-gray-50 transition-colors w-full",
+          isCurrentUser && "flex-row-reverse"
+        )}>
+          {showAvatar && !isCurrentUser ? (
+            <Avatar className="h-8 w-8 mt-0.5 flex-shrink-0">
+              <AvatarImage src={sender?.avatar} alt={sender?.name} />
+              <AvatarFallback>{sender?.name ? getInitials(sender.name) : 'U'}</AvatarFallback>
+            </Avatar>
+          ) : showAvatar ? (
+            <div className="h-8 w-8 flex-shrink-0"></div>
+          ) : <div className="w-8 flex-shrink-0"></div>}
+          
+          <div className={cn(
+            "flex flex-col max-w-3xl w-full",
+            isCurrentUser ? "items-end" : "items-start"
+          )}>
+            {showAvatar && !isCurrentUser && (
+              <div className="flex items-center mb-1 gap-2">
+                <span className="font-medium text-sm">{sender?.name}</span>
+                <span className="text-xs text-gray-500">{formatTime(message.timestamp)}</span>
+              </div>
+            )}
+            
+            <div className={cn(
+              "rounded-2xl px-4 py-2",
+              isCurrentUser ? 
+                "bg-clubify-500 text-white" : 
+                "bg-gray-100 text-gray-800"
+            )}>
+              <p className="whitespace-pre-wrap break-words">{message.text}</p>
+            </div>
+            
+            <div className={cn(
+              "flex items-center mt-1 gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
+              isCurrentUser && "justify-end"
+            )}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={handleReactionClick}
+              >
+                <Heart className={cn(
+                  "h-3.5 w-3.5",
+                  liked ? "fill-red-500 text-red-500" : "text-gray-500"
+                )} />
+              </Button>
+              
+              <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={handleImageButtonClick}
+              >
+                <Reply className="h-3.5 w-3.5 text-gray-500" />
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={handleFileButtonClick}
+              >
+                <MoreHorizontal className="h-3.5 w-3.5 text-gray-500" />
+              </Button>
+              
+              {!showAvatar && (
+                <span className="text-xs text-gray-500">{formatTime(message.timestamp)}</span>
+              )}
+            </div>
+          </div>
+
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            style={{ display: 'none' }} 
+          />
+          <input 
+            type="file" 
+            ref={imageInputRef} 
+            accept="image/*" 
+            onChange={handleImageChange} 
+            style={{ display: 'none' }} 
+          />
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        {isAdminOrModerator && (
+          <ContextMenuItem
+            className="text-red-600 focus:text-red-600 focus:bg-red-50"
+            onClick={handleDeleteMessage}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete Message
+          </ContextMenuItem>
+        )}
+      </ContextMenuContent>
+    </ContextMenu>
   );
 };
 
