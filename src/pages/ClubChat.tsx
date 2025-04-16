@@ -17,6 +17,8 @@ const ClubChat = () => {
   const [message, setMessage] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   
   // Set active club and channel based on URL params
   useEffect(() => {
@@ -62,6 +64,40 @@ const ClubChat = () => {
       sendMessage(message, activeChannel.id);
       setMessage('');
       setIsExpanded(false);
+    }
+  };
+
+  const handleFileButtonClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleImageButtonClick = () => {
+    if (imageInputRef.current) {
+      imageInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      // Here you would typically upload the file and then send a message with the file
+      console.log('File selected:', files[0].name);
+      
+      // Clear the input to allow selecting the same file again
+      e.target.value = '';
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      // Here you would typically upload the image and then send a message with the image
+      console.log('Image selected:', files[0].name);
+      
+      // Clear the input to allow selecting the same image again
+      e.target.value = '';
     }
   };
   
@@ -190,6 +226,7 @@ const ClubChat = () => {
                     variant="ghost" 
                     size="icon" 
                     className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                    onClick={handleImageButtonClick}
                   >
                     <ImageIcon className="h-5 w-5" />
                   </Button>
@@ -198,6 +235,7 @@ const ClubChat = () => {
                     variant="ghost" 
                     size="icon" 
                     className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                    onClick={handleFileButtonClick}
                   >
                     <Paperclip className="h-5 w-5" />
                   </Button>
@@ -221,6 +259,21 @@ const ClubChat = () => {
                 </Button>
               </div>
             </form>
+
+            {/* Hidden file inputs */}
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              style={{ display: 'none' }} 
+            />
+            <input 
+              type="file" 
+              ref={imageInputRef} 
+              accept="image/*" 
+              onChange={handleImageChange} 
+              style={{ display: 'none' }} 
+            />
           </div>
         </div>
       </main>

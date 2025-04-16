@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Heart, Reply, MoreHorizontal } from 'lucide-react';
@@ -22,6 +22,8 @@ const mockUsers = {
 const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
   const { currentUser } = useClubify();
   const [liked, setLiked] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   
   const isCurrentUser = message.senderId === currentUser?.id;
   const sender = mockUsers[message.senderId as keyof typeof mockUsers];
@@ -40,6 +42,46 @@ const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
       .map(part => part[0])
       .join('')
       .toUpperCase();
+  };
+
+  const handleFileButtonClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleImageButtonClick = () => {
+    if (imageInputRef.current) {
+      imageInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      // Here you would typically upload or process the selected file
+      console.log('File selected:', files[0].name);
+      
+      // Clear the input to allow selecting the same file again
+      e.target.value = '';
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      // Here you would typically upload or process the selected image file
+      console.log('Image selected:', files[0].name);
+      
+      // Clear the input to allow selecting the same image again
+      e.target.value = '';
+    }
+  };
+
+  const handleReactionClick = () => {
+    // For now just toggle the liked state
+    // In a real app, this would open an emoji picker
+    setLiked(!liked);
   };
   
   return (
@@ -84,7 +126,7 @@ const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
             variant="ghost"
             size="icon"
             className="h-6 w-6"
-            onClick={() => setLiked(!liked)}
+            onClick={handleReactionClick}
           >
             <Heart className={cn(
               "h-3.5 w-3.5",
@@ -96,6 +138,7 @@ const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
             variant="ghost"
             size="icon"
             className="h-6 w-6"
+            onClick={handleImageButtonClick}
           >
             <Reply className="h-3.5 w-3.5 text-gray-500" />
           </Button>
@@ -104,6 +147,7 @@ const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
             variant="ghost"
             size="icon"
             className="h-6 w-6"
+            onClick={handleFileButtonClick}
           >
             <MoreHorizontal className="h-3.5 w-3.5 text-gray-500" />
           </Button>
@@ -113,6 +157,21 @@ const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
           )}
         </div>
       </div>
+
+      {/* Hidden file inputs */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileChange} 
+        style={{ display: 'none' }} 
+      />
+      <input 
+        type="file" 
+        ref={imageInputRef} 
+        accept="image/*" 
+        onChange={handleImageChange} 
+        style={{ display: 'none' }} 
+      />
     </div>
   );
 };
