@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useClubify } from '@/context/ClubifyContext';
@@ -169,7 +168,6 @@ const ClubDetail = () => {
                   <p className="text-gray-700 whitespace-pre-line">{club.description}</p>
                 </div>
                 
-                {/* Club Calendar Component */}
                 {isMember && clubId && (
                   <ClubCalendar clubId={clubId} />
                 )}
@@ -195,7 +193,9 @@ const ClubDetail = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold">Members</h2>
-                    <Button variant="ghost" size="sm">View All</Button>
+                    <Link to={`/club/${clubId}/members`}>
+                      <Button variant="ghost" size="sm">View All</Button>
+                    </Link>
                   </div>
                   
                   <div className="space-y-4">

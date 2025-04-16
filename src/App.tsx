@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,6 +18,7 @@ import ChatDirectory from "./pages/ChatDirectory";
 import DirectChat from "./pages/DirectChat";
 import NotFound from "./pages/NotFound";
 import ClubSettings from "./pages/ClubSettings";
+import ClubMembers from "./pages/ClubMembers";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +40,7 @@ const App = () => (
             <Route path="/club/:clubId/chat" element={<ClubChat />} />
             <Route path="/club/:clubId/chat/:channelId" element={<ClubChat />} />
             <Route path="/club/:clubId/settings" element={<ClubSettings />} />
+            <Route path="/club/:clubId/members" element={<ClubMembers />} />
             <Route path="/chat" element={<ChatDirectory />} />
             <Route path="/chat/:userId" element={<DirectChat />} />
             <Route path="*" element={<NotFound />} />
