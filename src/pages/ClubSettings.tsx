@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useClubify } from '@/context/ClubifyContext';
 import Navbar from '@/components/Navbar';
@@ -49,6 +49,10 @@ const ClubSettings = () => {
   const [deletingChannelId, setDeletingChannelId] = useState<string | null>(null);
   const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
   const [promotingMemberId, setPromotingMemberId] = useState<string | null>(null);
+  
+  // Refs for file inputs
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
   
   // Find the club from the club ID
   const club = clubs.find(c => c.id === clubId);
@@ -185,6 +189,51 @@ const ClubSettings = () => {
     setPromotingMemberId(null);
   };
   
+  // Handle avatar upload
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setClubAvatar(event.target.result as string);
+        toast({
+          title: "Avatar selected",
+          description: "Click 'Save Changes' to update your club avatar."
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  
+  // Handle banner upload
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setClubBanner(event.target.result as string);
+        toast({
+          title: "Banner selected",
+          description: "Click 'Save Changes' to update your club banner."
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  
+  // Trigger file input click
+  const triggerAvatarUpload = () => {
+    avatarInputRef.current?.click();
+  };
+  
+  const triggerBannerUpload = () => {
+    bannerInputRef.current?.click();
+  };
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -245,7 +294,14 @@ const ClubSettings = () => {
                               <AvatarImage src={clubAvatar} alt={clubName} />
                               <AvatarFallback>{getInitials(clubName)}</AvatarFallback>
                             </Avatar>
-                            <Button variant="outline" size="sm">
+                            <input 
+                              type="file" 
+                              ref={avatarInputRef}
+                              className="hidden" 
+                              accept="image/*"
+                              onChange={handleAvatarUpload}
+                            />
+                            <Button variant="outline" size="sm" onClick={triggerAvatarUpload}>
                               <Camera className="mr-2 h-4 w-4" />
                               Change Avatar
                             </Button>
@@ -262,7 +318,14 @@ const ClubSettings = () => {
                                 className="w-full h-full object-cover"
                               />
                             </div>
-                            <Button variant="outline" size="sm">
+                            <input 
+                              type="file" 
+                              ref={bannerInputRef}
+                              className="hidden" 
+                              accept="image/*"
+                              onChange={handleBannerUpload}
+                            />
+                            <Button variant="outline" size="sm" onClick={triggerBannerUpload}>
                               <ImageIcon className="mr-2 h-4 w-4" />
                               Change Banner
                             </Button>

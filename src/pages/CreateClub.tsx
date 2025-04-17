@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClubify } from '@/context/ClubifyContext';
 import Navbar from '@/components/Navbar';
@@ -35,6 +36,10 @@ const CreateClub = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   
+  // Refs for file inputs
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -49,6 +54,40 @@ const CreateClub = () => {
       avatar: sampleImages.avatar,
       banner: sampleImages.banner
     }));
+  };
+  
+  // Handle avatar upload
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setFormData(prev => ({
+          ...prev,
+          avatar: event.target?.result as string
+        }));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  
+  // Handle banner upload
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setFormData(prev => ({
+          ...prev,
+          banner: event.target?.result as string
+        }));
+      }
+    };
+    reader.readAsDataURL(file);
   };
   
   const handleSubmit = (e: React.FormEvent) => {
@@ -122,7 +161,18 @@ const CreateClub = () => {
             >
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-white text-opacity-80">
-                  <Button variant="outline" className="bg-white/20 border-white text-white hover:bg-white/30">
+                  <input 
+                    type="file" 
+                    ref={bannerInputRef}
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={handleBannerUpload}
+                  />
+                  <Button 
+                    variant="outline" 
+                    className="bg-white/20 border-white text-white hover:bg-white/30"
+                    onClick={() => bannerInputRef.current?.click()}
+                  >
                     <Upload className="h-4 w-4 mr-2" />
                     Upload Banner
                   </Button>
@@ -137,10 +187,18 @@ const CreateClub = () => {
                     <AvatarImage src={formData.avatar} alt="Club avatar" />
                     <AvatarFallback>{formData.name ? getInitials(formData.name) : 'C'}</AvatarFallback>
                   </Avatar>
+                  <input 
+                    type="file" 
+                    ref={avatarInputRef}
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                  />
                   <Button 
                     variant="outline" 
                     size="icon" 
                     className="absolute bottom-0 right-0 rounded-full bg-white"
+                    onClick={() => avatarInputRef.current?.click()}
                   >
                     <Camera className="h-4 w-4" />
                   </Button>
