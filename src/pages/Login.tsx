@@ -58,10 +58,15 @@ const Login = () => {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin
+        redirectTo: `${window.location.origin}/login`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
       }
     });
 
@@ -71,8 +76,8 @@ const Login = () => {
         description: error.message,
         variant: 'destructive'
       });
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

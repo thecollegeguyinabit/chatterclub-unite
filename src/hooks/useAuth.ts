@@ -9,21 +9,29 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    };
-
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      (event, newSession) => {
+        console.log('Auth state changed:', event);
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        
+        // If user just signed in via OAuth, save any additional data if needed
+        if (event === 'SIGNED_IN' && newSession?.user) {
+          console.log('User signed in:', newSession.user);
+        }
       }
     );
 
-    checkSession();
+    // THEN check for existing session
+    const initializeAuth = async () => {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      setLoading(false);
+    };
+    
+    initializeAuth();
 
     return () => {
       subscription.unsubscribe();
