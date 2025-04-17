@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClubify } from '@/context/ClubifyContext';
@@ -17,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { Camera, Upload } from 'lucide-react';
+import { getClubSampleImage } from '@/integrations/supabase/sample-club-images';
 
 const categories = ['Technology', 'Academic', 'Sports', 'Arts', 'Culture', 'Community Service', 'Professional', 'Other'];
 
@@ -41,7 +41,14 @@ const CreateClub = () => {
   };
   
   const handleCategoryChange = (value: string) => {
-    setFormData({ ...formData, category: value });
+    const sampleImages = getClubSampleImage(value);
+    
+    setFormData(prev => ({
+      ...prev, 
+      category: value,
+      avatar: sampleImages.avatar,
+      banner: sampleImages.banner
+    }));
   };
   
   const handleSubmit = (e: React.FormEvent) => {
@@ -58,13 +65,9 @@ const CreateClub = () => {
     
     setIsLoading(true);
     
-    // Update avatar URL with the club name
-    const avatarUrl = `https://ui-avatars.com/api/?name=${formData.name.replace(/ /g, '+')}`;
-    
     try {
       createClub({
         ...formData,
-        avatar: avatarUrl,
         channels: []
       });
       
@@ -109,7 +112,14 @@ const CreateClub = () => {
           </div>
           
           <div className="bg-white rounded-xl shadow-elegant border border-gray-100 overflow-hidden animate-fadeIn">
-            <div className="relative h-48 bg-gradient-to-r from-clubify-400 to-clubify-600">
+            <div 
+              className="relative h-48 bg-gradient-to-r from-clubify-400 to-clubify-600"
+              style={{ 
+                backgroundImage: `url(${formData.banner})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            >
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-white text-opacity-80">
                   <Button variant="outline" className="bg-white/20 border-white text-white hover:bg-white/30">
