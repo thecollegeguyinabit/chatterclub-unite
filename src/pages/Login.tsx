@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
@@ -16,7 +15,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FcGoogle } from "react-icons/fc";
+import { Chrome } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -153,7 +152,7 @@ const Login = () => {
           onClick={handleGoogleLogin}
           disabled={loading}
         >
-          <FcGoogle className="mr-2 h-5 w-5" />
+          <Chrome className="mr-2 h-5 w-5" />
           Sign in with Google
         </Button>
 
