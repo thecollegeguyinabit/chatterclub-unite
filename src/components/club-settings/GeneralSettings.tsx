@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Camera, ImageIcon, Save } from 'lucide-react';
+import { Camera, ImageIcon } from 'lucide-react';
 import { Club } from '@/types/club';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GeneralSettingsProps {
   club: Club;
@@ -20,8 +21,7 @@ const GeneralSettings = ({ club, updateClub }: GeneralSettingsProps) => {
   // Local state for form data
   const [clubName, setClubName] = useState(club.name);
   const [clubDescription, setClubDescription] = useState(club.description);
-  const [clubAvatar, setClubAvatar] = useState(club.avatar);
-  const [clubBanner, setClubBanner] = useState(club.banner);
+  const [isUploading, setIsUploading] = useState(false);
   
   // Refs for file inputs
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -34,64 +34,75 @@ const GeneralSettings = ({ club, updateClub }: GeneralSettingsProps) => {
       .join('')
       .toUpperCase();
   };
+
+  const handleFileUpload = async (file: File, type: 'avatar' | 'banner') => {
+    try {
+      setIsUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${club.id}/${type}.${fileExt}`;
+      const filePath = `clubs/${fileName}`;
+
+      // Upload file to Supabase storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('club-content')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('club-content')
+        .getPublicUrl(filePath);
+
+      // Update club with new image URL
+      await updateClub(club.id, {
+        [type]: publicUrl
+      });
+
+      toast({
+        title: "Success",
+        description: `Club ${type} updated successfully`
+      });
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Error",
+        description: `Failed to update club ${type}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  
+  // Handle avatar upload
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await handleFileUpload(file, 'avatar');
+  };
+  
+  // Handle banner upload
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await handleFileUpload(file, 'banner');
+  };
+  
+  // Trigger file input click
+  const triggerAvatarUpload = () => avatarInputRef.current?.click();
+  const triggerBannerUpload = () => bannerInputRef.current?.click();
   
   const handleSaveGeneral = () => {
     updateClub(club.id, {
       name: clubName,
-      description: clubDescription,
-      avatar: clubAvatar,
-      banner: clubBanner
+      description: clubDescription
     });
     
     toast({
       title: "Settings saved",
       description: "Your club settings have been updated."
     });
-  };
-  
-  // Handle avatar upload
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setClubAvatar(event.target.result as string);
-        toast({
-          title: "Avatar selected",
-          description: "Click 'Save Changes' to update your club avatar."
-        });
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-  
-  // Handle banner upload
-  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setClubBanner(event.target.result as string);
-        toast({
-          title: "Banner selected",
-          description: "Click 'Save Changes' to update your club banner."
-        });
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-  
-  // Trigger file input click
-  const triggerAvatarUpload = () => {
-    avatarInputRef.current?.click();
-  };
-  
-  const triggerBannerUpload = () => {
-    bannerInputRef.current?.click();
   };
   
   return (
@@ -127,7 +138,7 @@ const GeneralSettings = ({ club, updateClub }: GeneralSettingsProps) => {
               <Label>Club Avatar</Label>
               <div className="flex flex-col items-center gap-4">
                 <Avatar className="h-32 w-32 border-2 border-gray-200">
-                  <AvatarImage src={clubAvatar} alt={clubName} />
+                  <AvatarImage src={club.avatar} alt={clubName} />
                   <AvatarFallback>{getInitials(clubName)}</AvatarFallback>
                 </Avatar>
                 <input 
@@ -137,7 +148,12 @@ const GeneralSettings = ({ club, updateClub }: GeneralSettingsProps) => {
                   accept="image/*"
                   onChange={handleAvatarUpload}
                 />
-                <Button variant="outline" size="sm" onClick={triggerAvatarUpload}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={triggerAvatarUpload}
+                  disabled={isUploading}
+                >
                   <Camera className="mr-2 h-4 w-4" />
                   Change Avatar
                 </Button>
@@ -149,7 +165,7 @@ const GeneralSettings = ({ club, updateClub }: GeneralSettingsProps) => {
               <div className="flex flex-col items-center gap-4">
                 <div className="relative h-32 w-full bg-gray-100 rounded-md overflow-hidden">
                   <img 
-                    src={clubBanner || '/placeholder.svg'} 
+                    src={club.banner || '/placeholder.svg'} 
                     alt={clubName} 
                     className="w-full h-full object-cover"
                   />
@@ -161,7 +177,12 @@ const GeneralSettings = ({ club, updateClub }: GeneralSettingsProps) => {
                   accept="image/*"
                   onChange={handleBannerUpload}
                 />
-                <Button variant="outline" size="sm" onClick={triggerBannerUpload}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={triggerBannerUpload}
+                  disabled={isUploading}
+                >
                   <ImageIcon className="mr-2 h-4 w-4" />
                   Change Banner
                 </Button>
@@ -171,8 +192,7 @@ const GeneralSettings = ({ club, updateClub }: GeneralSettingsProps) => {
         </div>
         
         <div className="flex justify-end">
-          <Button onClick={handleSaveGeneral}>
-            <Save className="mr-2 h-4 w-4" />
+          <Button onClick={handleSaveGeneral} disabled={isUploading}>
             Save Changes
           </Button>
         </div>
