@@ -9,6 +9,38 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      channels: {
+        Row: {
+          club_id: string | null
+          created_at: string | null
+          id: string
+          is_private: boolean | null
+          name: string
+        }
+        Insert: {
+          club_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_private?: boolean | null
+          name: string
+        }
+        Update: {
+          club_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_private?: boolean | null
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channels_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       club_invitations: {
         Row: {
           club_id: string
