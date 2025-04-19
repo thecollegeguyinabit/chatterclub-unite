@@ -1,10 +1,12 @@
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useClubify } from '@/context/ClubifyContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { AuthCard } from '@/components/AuthCard';
+import { useAuth } from '@/hooks/useAuth';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -12,12 +14,12 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const { register, isAuthenticated } = useClubify();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { session } = useAuth();
   
   // Redirect if already authenticated
-  if (isAuthenticated) {
+  if (session) {
     navigate('/my-clubs');
     return null;
   }
@@ -37,16 +39,27 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      await register(name, email, password);
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+          }
+        }
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Account created",
         description: "Your account has been successfully created!"
       });
       navigate('/my-clubs');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Registration failed",
-        description: "There was an error creating your account. Please try again.",
+        description: error.message || "There was an error creating your account. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -57,15 +70,16 @@ const Register = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8 animate-slideDown">
+        <div className="text-center mb-8">
           <Link to="/" className="inline-block">
             <h1 className="text-3xl font-bold text-clubify-600">Clubify</h1>
           </Link>
-          <h2 className="text-2xl font-bold mt-6 mb-2">Create an account</h2>
-          <p className="text-gray-600">Join Clubify to connect with clubs on your campus</p>
         </div>
         
-        <div className="bg-white rounded-xl shadow-elegant p-8 animate-fadeIn">
+        <AuthCard
+          title="Create an account"
+          description="Join Clubify to connect with clubs on your campus"
+        >
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -119,9 +133,9 @@ const Register = () => {
               {isLoading ? 'Creating Account...' : 'Create Account'}
             </Button>
           </form>
-        </div>
+        </AuthCard>
         
-        <div className="text-center mt-6 animate-slideUp">
+        <div className="text-center mt-6">
           <p className="text-gray-600">
             Already have an account?{' '}
             <Link to="/login" className="text-clubify-600 hover:text-clubify-700 font-medium">
