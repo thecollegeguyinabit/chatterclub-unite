@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useClubify } from '@/context/ClubifyContext';
@@ -10,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Send, Plus, Hash, PlusCircle, Smile, Paperclip, Image as ImageIcon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { supabase } from '@/integrations/supabase/client';
 
 const ClubChat = () => {
   const { clubId, channelId } = useParams<{ clubId: string; channelId?: string }>();
@@ -20,12 +20,10 @@ const ClubChat = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   
-  // Set active club and channel based on URL params
   useEffect(() => {
     if (clubId) {
       setActiveClub(clubId);
       
-      // If no channelId is provided, don't set any channel
       if (channelId) {
         setActiveChannel(channelId);
       }
@@ -36,7 +34,6 @@ const ClubChat = () => {
     };
   }, [clubId, channelId, setActiveClub, setActiveChannel]);
   
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -79,44 +76,77 @@ const ClubChat = () => {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadChatFile = async (
+    file: File,
+    type: 'file' | 'image'
+  ) => {
+    if (!currentUser || !activeClub || !activeChannel) return;
+
+    const ext = file.name.split('.').pop();
+    const path = `${activeClub.id}/${activeChannel.id}/${Date.now()}-${Math.random().toString(36).substr(2, 8)}.${ext}`;
+    const { data, error } = await supabase.storage
+      .from('chat-files')
+      .upload(path, file, { upsert: false });
+
+    if (error) {
+      console.error('File upload failed:', error);
+      return;
+    }
+
+    const fileUrl = supabase.storage.from('chat-files').getPublicUrl(path).data.publicUrl;
+
+    const { error: metaError } = await supabase
+      .from('chat_files')
+      .insert([
+        {
+          message_id: 'pending',
+          club_id: activeClub.id,
+          channel_id: activeChannel.id,
+          file_name: file.name,
+          file_url: fileUrl,
+        }
+      ]);
+
+    if (metaError) {
+      console.error('Failed to store file metadata:', metaError);
+    }
+
+    let messageText;
+    if (type === 'image') {
+      messageText = `![${file.name}](${fileUrl})`;
+    } else {
+      messageText = `[${file.name}](${fileUrl})`;
+    }
+    sendMessage(messageText, activeChannel.id);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      // Here you would typically upload the file and then send a message with the file
-      console.log('File selected:', files[0].name);
-      
-      // Clear the input to allow selecting the same file again
+      await uploadChatFile(files[0], 'file');
       e.target.value = '';
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      // Here you would typically upload the image and then send a message with the image
-      console.log('Image selected:', files[0].name);
-      
-      // Clear the input to allow selecting the same image again
+      await uploadChatFile(files[0], 'image');
       e.target.value = '';
     }
   };
-  
-  // Group messages by date and sender for better UI
+
   const groupedMessages = activeChannel.messages.reduce((groups, message, index, array) => {
     const prevMessage = index > 0 ? array[index - 1] : null;
     
-    // Check if this message is from the same sender as the previous one
-    // and within 5 minutes of the previous message
     const isSameSender = prevMessage && prevMessage.senderId === message.senderId;
     const isCloseTime = prevMessage && 
       (message.timestamp.getTime() - prevMessage.timestamp.getTime() < 5 * 60 * 1000);
     
-    // If both conditions are met, add to the last group
     if (isSameSender && isCloseTime) {
       const lastGroup = groups[groups.length - 1];
       lastGroup.messages.push(message);
     } else {
-      // Otherwise, create a new group
       groups.push({
         senderId: message.senderId,
         messages: [message]
@@ -150,7 +180,6 @@ const ClubChat = () => {
           
           <ScrollArea ref={scrollRef} className="flex-1 w-full h-full overflow-y-auto">
             <div className="p-4 w-full space-y-1">
-              {/* Welcome message */}
               {activeChannel.messages.length === 0 && (
                 <div className="text-center py-8 animate-fadeIn">
                   <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-clubify-50 text-clubify-600 mb-4">
@@ -163,7 +192,6 @@ const ClubChat = () => {
                 </div>
               )}
               
-              {/* Messages */}
               {groupedMessages.map((group, groupIndex) => (
                 <div key={`group-${groupIndex}`} className="w-full">
                   {group.messages.map((message, messageIndex) => (
@@ -260,7 +288,6 @@ const ClubChat = () => {
               </div>
             </form>
 
-            {/* Hidden file inputs */}
             <input 
               type="file" 
               ref={fileInputRef} 

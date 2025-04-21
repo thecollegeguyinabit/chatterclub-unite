@@ -41,6 +41,36 @@ export type Database = {
           },
         ]
       }
+      chat_files: {
+        Row: {
+          channel_id: string
+          club_id: string
+          file_name: string
+          file_url: string
+          id: string
+          message_id: string
+          uploaded_at: string | null
+        }
+        Insert: {
+          channel_id: string
+          club_id: string
+          file_name: string
+          file_url: string
+          id?: string
+          message_id: string
+          uploaded_at?: string | null
+        }
+        Update: {
+          channel_id?: string
+          club_id?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          message_id?: string
+          uploaded_at?: string | null
+        }
+        Relationships: []
+      }
       club_invitations: {
         Row: {
           club_id: string

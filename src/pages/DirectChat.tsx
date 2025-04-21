@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useClubify } from '@/context/ClubifyContext';
@@ -10,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Send, Smile, Plus, ArrowLeft, Phone, Video, Info, Paperclip, Image as ImageIcon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { supabase } from '@/integrations/supabase/client';
 
 const DirectChat = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -21,7 +21,6 @@ const DirectChat = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   
-  // Set active chat based on URL params
   useEffect(() => {
     if (userId) {
       setActiveChat(userId);
@@ -32,7 +31,6 @@ const DirectChat = () => {
     };
   }, [userId, setActiveChat]);
   
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -55,7 +53,6 @@ const DirectChat = () => {
   
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (message.trim()) {
       const recipientId = activeChat.participants.find(id => id !== currentUser.id);
       if (recipientId) {
@@ -78,29 +75,51 @@ const DirectChat = () => {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadChatFile = async (
+    file: File,
+    type: 'file' | 'image'
+  ) => {
+    if (!currentUser || !activeChat) return;
+    const ext = file.name.split('.').pop();
+    const path = `direct/${activeChat.id}/${Date.now()}-${Math.random().toString(36).substr(2, 8)}.${ext}`;
+    const { data, error } = await supabase.storage
+      .from('chat-files')
+      .upload(path, file, { upsert: false });
+
+    if (error) {
+      console.error('File upload failed:', error);
+      return;
+    }
+    const fileUrl = supabase.storage.from('chat-files').getPublicUrl(path).data.publicUrl;
+
+    let messageText;
+    if (type === 'image') {
+      messageText = `![${file.name}](${fileUrl})`;
+    } else {
+      messageText = `[${file.name}](${fileUrl})`;
+    }
+    const recipientId = activeChat.participants.find(id => id !== currentUser.id);
+    if (recipientId) {
+      sendMessage(messageText, undefined, recipientId);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      // Here you would typically upload the file and then send a message with the file
-      console.log('File selected:', files[0].name);
-      
-      // Clear the input to allow selecting the same file again
+      await uploadChatFile(files[0], 'file');
       e.target.value = '';
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      // Here you would typically upload the image and then send a message with the image
-      console.log('Image selected:', files[0].name);
-      
-      // Clear the input to allow selecting the same image again
+      await uploadChatFile(files[0], 'image');
       e.target.value = '';
     }
   };
   
-  // Mock user data for demo
   const mockUsers = {
     '1': { name: 'John Doe', avatar: 'https://ui-avatars.com/api/?name=John+Doe' },
     '2': { name: 'Jane Smith', avatar: 'https://ui-avatars.com/api/?name=Jane+Smith' },
@@ -122,22 +141,17 @@ const DirectChat = () => {
       .toUpperCase();
   };
   
-  // Group messages by date and sender for better UI
   const groupedMessages = activeChat.messages.reduce((groups, message, index, array) => {
     const prevMessage = index > 0 ? array[index - 1] : null;
     
-    // Check if this message is from the same sender as the previous one
-    // and within 5 minutes of the previous message
     const isSameSender = prevMessage && prevMessage.senderId === message.senderId;
     const isCloseTime = prevMessage && 
       (message.timestamp.getTime() - prevMessage.timestamp.getTime() < 5 * 60 * 1000);
     
-    // If both conditions are met, add to the last group
     if (isSameSender && isCloseTime) {
       const lastGroup = groups[groups.length - 1];
       lastGroup.messages.push(message);
     } else {
-      // Otherwise, create a new group
       groups.push({
         senderId: message.senderId,
         messages: [message]
@@ -189,7 +203,6 @@ const DirectChat = () => {
         
         <ScrollArea ref={scrollRef} className="flex-1 w-full h-full overflow-y-auto">
           <div className="p-4 w-full space-y-1">
-            {/* Welcome message */}
             {activeChat.messages.length === 0 && (
               <div className="text-center py-8 animate-fadeIn">
                 <Avatar className="h-16 w-16 mx-auto mb-4">
@@ -203,7 +216,6 @@ const DirectChat = () => {
               </div>
             )}
             
-            {/* Messages */}
             {groupedMessages.map((group, groupIndex) => (
               <div key={`group-${groupIndex}`} className="w-full">
                 {group.messages.map((message, messageIndex) => (
@@ -300,7 +312,6 @@ const DirectChat = () => {
             </div>
           </form>
 
-          {/* Hidden file inputs */}
           <input 
             type="file" 
             ref={fileInputRef} 
