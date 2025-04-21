@@ -1,10 +1,11 @@
-
 import React, { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Send, Plus, Smile } from "lucide-react";
 import FileUploadButton from "./FileUploadButton";
+import ChatInputTextArea from "./ChatInputTextArea";
+import ChatInputActions from "./ChatInputActions";
 
 type ChatInputProps = {
   placeholder?: string;
@@ -52,66 +53,21 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <form onSubmit={handleSend} className="space-y-2 w-full">
-      {isExpanded ? (
-        <Textarea
-          placeholder={placeholder}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          className="w-full resize-none transition-all focus-visible:ring-clubify-500"
-          rows={3}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              if (message.trim()) handleSend(e);
-            }
-          }}
-          autoFocus
-        />
-      ) : (
-        <Input
-          placeholder={placeholder}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          className="w-full bg-gray-50 border-gray-200 focus-visible:ring-clubify-500"
-          onFocus={() => setIsExpanded(true)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              if (message.trim()) handleSend(e);
-            }
-          }}
-        />
-      )}
+      <ChatInputTextArea
+        message={message}
+        setMessage={setMessage}
+        isExpanded={isExpanded}
+        setIsExpanded={setIsExpanded}
+        placeholder={placeholder}
+        onSend={handleSend}
+      />
       <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-          >
-            <Plus className="h-5 w-5" />
-          </Button>
-          <FileUploadButton
-            ref={imageInputRef}
-            onChange={handleImageChange}
-            type="image"
-            accept="image/*"
-          />
-          <FileUploadButton
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            type="file"
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-          >
-            <Smile className="h-5 w-5" />
-          </Button>
-        </div>
+        <ChatInputActions
+          fileInputRef={fileInputRef}
+          imageInputRef={imageInputRef}
+          handleFileChange={handleFileChange}
+          handleImageChange={handleImageChange}
+        />
         <Button
           type="submit"
           className="bg-clubify-500 hover:bg-clubify-600 transition-colors"

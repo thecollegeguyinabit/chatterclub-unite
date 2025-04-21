@@ -11,6 +11,10 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import AvatarWithInitials from "./AvatarWithInitials";
+import MessageBubble from "./MessageBubble";
+import MessageMetaActions from "./MessageMetaActions";
+import { getInitials, formatTime } from "./messageUtils";
 
 const mockUsers = {
   '1': { name: 'John Doe', avatar: 'https://ui-avatars.com/api/?name=John+Doe' },
@@ -37,22 +41,6 @@ const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
     activeClub.admin === currentUser.id ||
     currentUser.role === 'moderator'
   );
-
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: true
-    }).format(date);
-  };
-  
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
-  };
 
   const handleFileButtonClick = () => {
     if (fileInputRef.current) {
@@ -105,10 +93,10 @@ const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
           isCurrentUser && "flex-row-reverse"
         )}>
           {showAvatar && !isCurrentUser ? (
-            <Avatar className="h-8 w-8 mt-0.5 flex-shrink-0">
-              <AvatarImage src={sender?.avatar} alt={sender?.name} />
-              <AvatarFallback>{sender?.name ? getInitials(sender.name) : 'U'}</AvatarFallback>
-            </Avatar>
+            <AvatarWithInitials
+              name={sender?.name}
+              avatar={sender?.avatar}
+            />
           ) : showAvatar ? (
             <div className="h-8 w-8 flex-shrink-0"></div>
           ) : <div className="w-8 flex-shrink-0"></div>}
@@ -124,55 +112,21 @@ const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
               </div>
             )}
             
-            <div className={cn(
-              "rounded-2xl px-4 py-2",
-              isCurrentUser ? 
-                "bg-clubify-500 text-white" : 
-                "bg-gray-100 text-gray-800"
-            )}>
-              <p className="whitespace-pre-wrap break-words">{message.text}</p>
-            </div>
+            <MessageBubble
+              isCurrentUser={isCurrentUser}
+              text={message.text}
+            />
             
-            <div className={cn(
-              "flex items-center mt-1 gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
-              isCurrentUser && "justify-end"
-            )}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={handleReactionClick}
-              >
-                <Heart className={cn(
-                  "h-3.5 w-3.5",
-                  liked ? "fill-red-500 text-red-500" : "text-gray-500"
-                )} />
-              </Button>
-              
-              <EmojiPicker onEmojiSelect={handleEmojiSelect} />
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={handleImageButtonClick}
-              >
-                <Reply className="h-3.5 w-3.5 text-gray-500" />
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={handleFileButtonClick}
-              >
-                <MoreHorizontal className="h-3.5 w-3.5 text-gray-500" />
-              </Button>
-              
-              {!showAvatar && (
-                <span className="text-xs text-gray-500">{formatTime(message.timestamp)}</span>
-              )}
-            </div>
+            <MessageMetaActions
+              isCurrentUser={isCurrentUser}
+              liked={liked}
+              onReactionClick={handleReactionClick}
+              onEmojiSelect={handleEmojiSelect}
+              onImageButtonClick={handleImageButtonClick}
+              onFileButtonClick={handleFileButtonClick}
+              showAvatar={showAvatar}
+              timestamp={message.timestamp}
+            />
           </div>
 
           <input 
