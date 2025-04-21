@@ -10,6 +10,17 @@ import { supabase } from "@/integrations/supabase/client";
 import ChatInput from "@/components/ChatInput";
 import MessageList from "@/components/MessageList";
 import { Button } from "@/components/ui/button";
+import { useChannelMessages } from "@/hooks/useChannelMessages";
+
+// Temporary, should match Message shape expected by MessageList
+function mapDbMessageToContextMsg(dbMsg) {
+  return {
+    id: dbMsg.id,
+    senderId: dbMsg.sender_id,
+    text: dbMsg.text,
+    timestamp: new Date(dbMsg.sent_at),
+  };
+}
 
 const ClubChat = () => {
   const { clubId, channelId } = useParams<{ clubId: string; channelId?: string }>();
@@ -24,6 +35,12 @@ const ClubChat = () => {
   } = useClubify();
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Use new hook for Supabase-backed messages
+  const { messages: dbMessages, loading } = useChannelMessages(
+    activeClub?.id || null,
+    activeChannel?.id || null
+  );
+
   useEffect(() => {
     if (clubId) {
       setActiveClub(clubId);
@@ -31,7 +48,6 @@ const ClubChat = () => {
         setActiveChannel(channelId);
       }
     }
-
     return () => {
       setActiveClub(null);
     };
@@ -41,7 +57,7 @@ const ClubChat = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [activeChannel?.messages]);
+  }, [dbMessages]);
 
   if (!activeClub || !activeChannel) {
     return (
@@ -59,7 +75,7 @@ const ClubChat = () => {
     );
   }
 
-  // File upload logic extracted for use in ChatInput
+  // Updated: Save chat files as before, but send via Supabase instead of context
   const uploadChatFile = async (file: File, type: "file" | "image") => {
     if (!currentUser || !activeClub || !activeChannel) return;
 
@@ -99,7 +115,24 @@ const ClubChat = () => {
     } else {
       messageText = `[${file.name}](${fileUrl})`;
     }
-    sendMessage(messageText, activeChannel.id);
+    // Use the new sendMessageToSupabase function
+    await sendMessageToSupabase(messageText);
+  };
+
+  // Send message: Insert into Supabase
+  const sendMessageToSupabase = async (msg: string) => {
+    if (!currentUser || !activeClub || !activeChannel) return;
+
+    const { error } = await supabase.from("messages").insert({
+      club_id: activeClub.id,
+      channel_id: activeChannel.id,
+      sender_id: currentUser.id,
+      text: msg,
+    });
+    if (error) {
+      console.error("Failed to send message:", error);
+    }
+    // Real-time will auto-update UI
   };
 
   return (
@@ -123,7 +156,9 @@ const ClubChat = () => {
           </div>
           <ScrollArea ref={scrollRef} className="flex-1 w-full h-full overflow-y-auto">
             <div className="p-4 w-full space-y-1">
-              {activeChannel.messages.length === 0 && (
+              {loading ? (
+                <div className="text-center py-8 text-gray-400">Loading messages...</div>
+              ) : dbMessages.length === 0 ? (
                 <div className="text-center py-8 animate-fadeIn">
                   <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-clubify-50 text-clubify-600 mb-4">
                     <Hash className="h-8 w-8" />
@@ -136,14 +171,15 @@ const ClubChat = () => {
                     message to start the conversation.
                   </p>
                 </div>
+              ) : (
+                <MessageList messages={dbMessages.map(mapDbMessageToContextMsg)} />
               )}
-              <MessageList messages={activeChannel.messages} />
             </div>
           </ScrollArea>
           <div className="p-4 border-t border-gray-200 bg-white shadow-inner w-full">
             <ChatInput
               placeholder={`Message #${activeChannel.name}`}
-              onSend={(msg) => sendMessage(msg, activeChannel.id)}
+              onSend={sendMessageToSupabase}
               onUploadFile={uploadChatFile}
             />
           </div>

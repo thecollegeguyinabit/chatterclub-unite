@@ -139,6 +139,55 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          channel_id: string | null
+          club_id: string | null
+          id: string
+          sender_id: string
+          sent_at: string
+          text: string
+        }
+        Insert: {
+          channel_id?: string | null
+          club_id?: string | null
+          id?: string
+          sender_id: string
+          sent_at?: string
+          text: string
+        }
+        Update: {
+          channel_id?: string | null
+          club_id?: string | null
+          id?: string
+          sender_id?: string
+          sent_at?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
