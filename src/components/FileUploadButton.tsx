@@ -2,6 +2,7 @@
 import React, { forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Paperclip, Image as ImageIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 type FileUploadButtonProps = {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -16,6 +17,26 @@ const icons = {
 
 const FileUploadButton = forwardRef<HTMLInputElement, FileUploadButtonProps>(
   ({ onChange, accept, type }, ref) => {
+    const { toast } = useToast();
+    
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+      
+      // Check file size (limit to 10MB)
+      const file = files[0];
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please upload a file smaller than 10MB",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      onChange(e);
+    };
+    
     return (
       <>
         <Button
@@ -33,12 +54,14 @@ const FileUploadButton = forwardRef<HTMLInputElement, FileUploadButtonProps>(
           type="file"
           accept={accept}
           ref={ref}
-          onChange={onChange}
+          onChange={handleChange}
           style={{ display: "none" }}
         />
       </>
     );
   }
 );
+
+FileUploadButton.displayName = "FileUploadButton";
 
 export default FileUploadButton;
