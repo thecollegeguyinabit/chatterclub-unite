@@ -1,5 +1,5 @@
 
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -7,6 +7,7 @@ import { Camera } from 'lucide-react';
 import { Club } from '@/types/club';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { getInitials } from '@/components/messageUtils';
 
 interface ClubAvatarProps {
   club: Club;
@@ -18,14 +19,6 @@ interface ClubAvatarProps {
 const ClubAvatar = ({ club, updateClub, isUploading, setIsUploading }: ClubAvatarProps) => {
   const { toast } = useToast();
   const avatarInputRef = useRef<HTMLInputElement>(null);
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
-  };
 
   const handleFileUpload = async (file: File) => {
     try {

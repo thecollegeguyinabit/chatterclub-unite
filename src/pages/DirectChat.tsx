@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useClubify } from "@/context/ClubifyContext";
@@ -10,12 +9,15 @@ import { supabase } from "@/integrations/supabase/client";
 import ChatInput from "@/components/ChatInput";
 import MessageList from "@/components/MessageList";
 import { Button } from "@/components/ui/button";
+import { useProfile } from "@/hooks/useProfile";
+import { getInitials } from "@/components/messageUtils";
 
 const DirectChat = () => {
   const { userId } = useParams<{ userId: string }>();
   const { setActiveChat, activeChat, sendMessage, currentUser } = useClubify();
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { profile: otherUserProfile } = useProfile(userId);
 
   useEffect(() => {
     if (userId) {
@@ -78,35 +80,8 @@ const DirectChat = () => {
     }
   };
 
-  const mockUsers = {
-    "1": { name: "John Doe", avatar: "https://ui-avatars.com/api/?name=John+Doe" },
-    "2": {
-      name: "Jane Smith",
-      avatar: "https://ui-avatars.com/api/?name=Jane+Smith",
-    },
-    "3": {
-      name: "Alex Johnson",
-      avatar: "https://ui-avatars.com/api/?name=Alex+Johnson",
-    },
-    "4": {
-      name: "Sam Wilson",
-      avatar: "https://ui-avatars.com/api/?name=Sam+Wilson",
-    },
-  };
-
   const otherUserId = activeChat.participants.find((id) => id !== currentUser.id) || "";
-  const otherUser = mockUsers[otherUserId as keyof typeof mockUsers] || {
-    name: `User ${otherUserId.slice(0, 4)}`,
-    avatar: `https://ui-avatars.com/api/?name=User+${otherUserId.slice(0, 4)}`,
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .toUpperCase();
-  };
+  const otherUserName = otherUserProfile?.email || `User ${otherUserId.slice(0, 4)}`;
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden">
@@ -125,12 +100,12 @@ const DirectChat = () => {
             </Button>
 
             <Avatar className="h-8 w-8 mr-2">
-              <AvatarImage src={otherUser.avatar} alt={otherUser.name} />
-              <AvatarFallback>{getInitials(otherUser.name)}</AvatarFallback>
+              <AvatarImage src={otherUserProfile?.avatar_url || undefined} alt={otherUserName} />
+              <AvatarFallback>{getInitials(otherUserName)}</AvatarFallback>
             </Avatar>
 
             <div>
-              <h2 className="font-medium text-sm md:text-base">{otherUser.name}</h2>
+              <h2 className="font-medium text-sm md:text-base">{otherUserName}</h2>
               <p className="text-xs text-gray-500">Active now</p>
             </div>
           </div>
@@ -151,13 +126,13 @@ const DirectChat = () => {
             {activeChat.messages.length === 0 && (
               <div className="text-center py-8 animate-fadeIn">
                 <Avatar className="h-16 w-16 mx-auto mb-4">
-                  <AvatarImage src={otherUser.avatar} alt={otherUser.name} />
-                  <AvatarFallback>{getInitials(otherUser.name)}</AvatarFallback>
+                  <AvatarImage src={otherUserProfile?.avatar_url || undefined} alt={otherUserName} />
+                  <AvatarFallback>{getInitials(otherUserName)}</AvatarFallback>
                 </Avatar>
-                <h3 className="text-xl font-medium mb-2">{otherUser.name}</h3>
+                <h3 className="text-xl font-medium mb-2">{otherUserName}</h3>
                 <p className="text-gray-600 max-w-md mx-auto">
                   This is the beginning of your direct message history with{" "}
-                  {otherUser.name}.
+                  {otherUserName}.
                 </p>
               </div>
             )}
@@ -166,7 +141,7 @@ const DirectChat = () => {
         </ScrollArea>
         <div className="p-4 border-t border-gray-200 bg-white shadow-inner w-full">
           <ChatInput
-            placeholder={`Message ${otherUser.name}`}
+            placeholder={`Message ${otherUserName}`}
             onSend={(msg) => {
               const recipientId = activeChat.participants.find(
                 (id) => id !== currentUser.id

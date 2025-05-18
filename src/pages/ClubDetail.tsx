@@ -9,6 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { CalendarDays, Users, MessageSquare, Bell, BellOff, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getInitials } from '@/components/messageUtils';
+import { useProfile } from '@/hooks/useProfile';
 
 const ClubDetail = () => {
   const { clubId } = useParams<{ clubId: string }>();
@@ -47,14 +49,6 @@ const ClubDetail = () => {
   const isAdmin = club.admin === currentUser?.id;
   
   const memberCount = club.members.length;
-  
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
-  };
   
   const handleJoinClub = () => {
     if (!isMember) {
@@ -200,21 +194,7 @@ const ClubDetail = () => {
                   
                   <div className="space-y-4">
                     {club.members.slice(0, 5).map((memberId, index) => (
-                      <div key={memberId} className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={`https://ui-avatars.com/api/?name=Member+${index + 1}`} />
-                          <AvatarFallback>M{index + 1}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium">
-                            {memberId === club.admin ? (
-                              <span>Club Admin</span>
-                            ) : (
-                              <span>Member {index + 1}</span>
-                            )}
-                          </p>
-                        </div>
-                      </div>
+                      <ClubMemberItem key={memberId} memberId={memberId} isAdmin={memberId === club.admin} />
                     ))}
                   </div>
                 </div>
@@ -240,6 +220,30 @@ const ClubDetail = () => {
           </div>
         </div>
       </main>
+    </div>
+  );
+};
+
+// Add this helper component at the end of the file
+const ClubMemberItem = ({ memberId, isAdmin }: { memberId: string, isAdmin: boolean }) => {
+  const { profile } = useProfile(memberId);
+  const userName = profile?.email || `Member ${memberId.slice(0, 4)}`;
+  
+  return (
+    <div className="flex items-center gap-3">
+      <Avatar className="h-8 w-8">
+        <AvatarImage src={profile?.avatar_url || undefined} />
+        <AvatarFallback>{getInitials(userName)}</AvatarFallback>
+      </Avatar>
+      <div>
+        <p className="text-sm font-medium">
+          {isAdmin ? (
+            <span>Club Admin</span>
+          ) : (
+            <span>{userName}</span>
+          )}
+        </p>
+      </div>
     </div>
   );
 };

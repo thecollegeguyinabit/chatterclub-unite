@@ -1,5 +1,5 @@
+
 import { useState, useRef } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Heart, Reply, MoreHorizontal, Trash2 } from 'lucide-react';
 import { useClubify, Message } from '@/context/ClubifyContext';
@@ -14,14 +14,8 @@ import {
 import AvatarWithInitials from "./AvatarWithInitials";
 import MessageBubble from "./MessageBubble";
 import MessageMetaActions from "./MessageMetaActions";
-import { getInitials, formatTime } from "./messageUtils";
-
-const mockUsers = {
-  '1': { name: 'John Doe', avatar: 'https://ui-avatars.com/api/?name=John+Doe' },
-  '2': { name: 'Jane Smith', avatar: 'https://ui-avatars.com/api/?name=Jane+Smith' },
-  '3': { name: 'Alex Johnson', avatar: 'https://ui-avatars.com/api/?name=Alex+Johnson' },
-  '4': { name: 'Sam Wilson', avatar: 'https://ui-avatars.com/api/?name=Sam+Wilson' },
-};
+import { formatTime } from "./messageUtils";
+import { useProfile } from '@/hooks/useProfile';
 
 interface ChatMessageProps {
   message: Message;
@@ -33,9 +27,10 @@ const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
   const [liked, setLiked] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const { profile } = useProfile(message.senderId);
   
   const isCurrentUser = message.senderId === currentUser?.id;
-  const sender = mockUsers[message.senderId as keyof typeof mockUsers];
+  const senderName = profile?.email || `User ${message.senderId.slice(0, 4)}`;
   
   const isAdminOrModerator = currentUser && activeClub && (
     activeClub.admin === currentUser.id ||
@@ -94,8 +89,8 @@ const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
         )}>
           {showAvatar && !isCurrentUser ? (
             <AvatarWithInitials
-              name={sender?.name}
-              avatar={sender?.avatar}
+              name={senderName}
+              avatar={profile?.avatar_url}
             />
           ) : showAvatar ? (
             <div className="h-8 w-8 flex-shrink-0"></div>
@@ -107,7 +102,7 @@ const ChatMessage = ({ message, showAvatar = true }: ChatMessageProps) => {
           )}>
             {showAvatar && !isCurrentUser && (
               <div className="flex items-center mb-1 gap-2">
-                <span className="font-medium text-sm">{sender?.name}</span>
+                <span className="font-medium text-sm">{senderName}</span>
                 <span className="text-xs text-gray-500">{formatTime(message.timestamp)}</span>
               </div>
             )}

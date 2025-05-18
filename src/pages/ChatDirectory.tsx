@@ -8,13 +8,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Search, Users, Hash, MessageSquare, Plus } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useProfile } from '@/hooks/useProfile';
+import { getInitials } from '@/components/messageUtils';
 
 // Mock user data for demo
-const mockUsers = [
-  { id: '2', name: 'Jane Smith', avatar: 'https://ui-avatars.com/api/?name=Jane+Smith' },
-  { id: '3', name: 'Alex Johnson', avatar: 'https://ui-avatars.com/api/?name=Alex+Johnson' },
-  { id: '4', name: 'Sam Wilson', avatar: 'https://ui-avatars.com/api/?name=Sam+Wilson' },
-];
+const mockUserIds = ['2', '3', '4'];
 
 const ChatDirectory = () => {
   const { userClubs, directMessages, currentUser, setActiveClub, setActiveChat } = useClubify();
@@ -26,14 +24,6 @@ const ChatDirectory = () => {
   }, [setActiveClub, setActiveChat]);
   
   if (!currentUser) return null;
-  
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
-  };
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -99,19 +89,8 @@ const ChatDirectory = () => {
                 </h3>
               </div>
               
-              {mockUsers.map(user => (
-                <Link to={`/chat/${user.id}`} key={user.id}>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start mb-1 text-sm font-normal"
-                  >
-                    <Avatar className="h-5 w-5 mr-2">
-                      <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                    </Avatar>
-                    <span className="truncate">{user.name}</span>
-                  </Button>
-                </Link>
+              {mockUserIds.map(userId => (
+                <UserListItem key={userId} userId={userId} />
               ))}
             </div>
           </ScrollArea>
@@ -162,19 +141,8 @@ const ChatDirectory = () => {
                   </Link>
                 ))}
                 
-                {mockUsers.slice(0, 3).map(user => (
-                  <Link to={`/chat/${user.id}`} key={user.id} className="block">
-                    <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{user.name}</p>
-                        <p className="text-sm text-gray-500">Direct Message</p>
-                      </div>
-                    </div>
-                  </Link>
+                {mockUserIds.slice(0, 3).map(userId => (
+                  <MobileUserItem key={userId} userId={userId} />
                 ))}
               </div>
             </div>
@@ -182,6 +150,48 @@ const ChatDirectory = () => {
         </div>
       </main>
     </div>
+  );
+};
+
+// Helper component for user list items with profile data
+const UserListItem = ({ userId }: { userId: string }) => {
+  const { profile } = useProfile(userId);
+  const userName = profile?.email || `User ${userId.slice(0, 4)}`;
+  
+  return (
+    <Link to={`/chat/${userId}`}>
+      <Button
+        variant="ghost"
+        className="w-full justify-start mb-1 text-sm font-normal"
+      >
+        <Avatar className="h-5 w-5 mr-2">
+          <AvatarImage src={profile?.avatar_url || undefined} alt={userName} />
+          <AvatarFallback>{getInitials(userName)}</AvatarFallback>
+        </Avatar>
+        <span className="truncate">{userName}</span>
+      </Button>
+    </Link>
+  );
+};
+
+// Helper component for mobile user items with profile data
+const MobileUserItem = ({ userId }: { userId: string }) => {
+  const { profile } = useProfile(userId);
+  const userName = profile?.email || `User ${userId.slice(0, 4)}`;
+  
+  return (
+    <Link to={`/chat/${userId}`} className="block">
+      <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+        <Avatar className="h-10 w-10">
+          <AvatarImage src={profile?.avatar_url || undefined} alt={userName} />
+          <AvatarFallback>{getInitials(userName)}</AvatarFallback>
+        </Avatar>
+        <div>
+          <p className="font-medium">{userName}</p>
+          <p className="text-sm text-gray-500">Direct Message</p>
+        </div>
+      </div>
+    </Link>
   );
 };
 

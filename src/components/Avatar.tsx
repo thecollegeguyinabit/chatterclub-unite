@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { Camera } from 'lucide-react';
+import { getInitials } from './messageUtils';
 
 interface AvatarProps {
   size?: 'sm' | 'md' | 'lg';
@@ -30,6 +31,9 @@ export const Avatar: React.FC<AvatarProps> = ({ size = 'md', editable = false })
   };
 
   const getFallbackInitials = () => {
+    if (profile?.email) {
+      return getInitials(profile.email);
+    }
     return user?.email?.charAt(0).toUpperCase() || '?';
   };
 
