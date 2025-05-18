@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import GeneralSettings from '@/components/club-settings/GeneralSettings';
 import ChannelSettings from '@/components/club-settings/ChannelSettings';
 import MemberSettings from '@/components/club-settings/MemberSettings';
+import { useClubChannels } from '@/hooks/useClubChannels';
 
 const ClubSettings = () => {
   const { clubId } = useParams<{ clubId: string }>();
@@ -27,6 +28,9 @@ const ClubSettings = () => {
   } = useClubify();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Fetch club channels from database
+  const { channels } = useClubChannels(clubId || null);
   
   // Find the club from the club ID
   const club = clubs.find(c => c.id === clubId);
@@ -55,6 +59,12 @@ const ClubSettings = () => {
       </div>
     );
   }
+  
+  // Merge db channels into the club object for UI consistency
+  const clubWithDbChannels = {
+    ...club,
+    channels: channels.length > 0 ? channels : club.channels
+  };
   
   // Check if current user is admin
   const isAdmin = club.admin === currentUser?.id;
@@ -105,7 +115,7 @@ const ClubSettings = () => {
               {/* Channels Settings Tab */}
               <TabsContent value="channels" className="space-y-6">
                 <ChannelSettings 
-                  club={club}
+                  club={clubWithDbChannels}
                   addChannel={addChannel}
                   removeChannel={removeChannel}
                 />

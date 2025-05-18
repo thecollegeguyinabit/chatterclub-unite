@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Hash, Plus, Trash } from 'lucide-react';
 import { Channel, Club } from '@/types/club';
+import { useChannels } from '@/hooks/useChannels';
 
 interface ChannelSettingsProps {
   club: Club;
@@ -14,13 +15,14 @@ interface ChannelSettingsProps {
   removeChannel: (clubId: string, channelId: string) => void;
 }
 
-const ChannelSettings = ({ club, addChannel, removeChannel }: ChannelSettingsProps) => {
+const ChannelSettings = ({ club, addChannel: addChannelToContext, removeChannel: removeChannelFromContext }: ChannelSettingsProps) => {
   const { toast } = useToast();
+  const { addChannel: addChannelToDb, removeChannel: removeChannelFromDb, loading } = useChannels(club.id);
   
   const [newChannelName, setNewChannelName] = useState('');
   const [deletingChannelId, setDeletingChannelId] = useState<string | null>(null);
   
-  const handleCreateChannel = () => {
+  const handleCreateChannel = async () => {
     if (!newChannelName.trim()) {
       toast({
         title: "Error",
@@ -30,16 +32,18 @@ const ChannelSettings = ({ club, addChannel, removeChannel }: ChannelSettingsPro
       return;
     }
     
-    addChannel(club.id, newChannelName.trim());
+    // Add to database first
+    const newChannel = await addChannelToDb(newChannelName.trim());
     
-    toast({
-      title: "Channel created",
-      description: `${newChannelName} channel has been created.`
-    });
+    if (newChannel) {
+      // Then update context for immediate UI update
+      addChannelToContext(club.id, newChannelName.trim());
+    }
+    
     setNewChannelName('');
   };
   
-  const handleDeleteChannel = (channelId: string, channelName: string) => {
+  const handleDeleteChannel = async (channelId: string, channelName: string) => {
     if (channelName === 'general') {
       toast({
         title: "Cannot delete general channel",
@@ -49,12 +53,13 @@ const ChannelSettings = ({ club, addChannel, removeChannel }: ChannelSettingsPro
       return;
     }
     
-    removeChannel(club.id, channelId);
+    // Delete from database first
+    const success = await removeChannelFromDb(channelId);
     
-    toast({
-      title: "Channel deleted",
-      description: `${channelName} channel has been deleted.`
-    });
+    if (success) {
+      // Then update context for immediate UI update
+      removeChannelFromContext(club.id, channelId);
+    }
     
     setDeletingChannelId(null);
   };
@@ -74,7 +79,7 @@ const ChannelSettings = ({ club, addChannel, removeChannel }: ChannelSettingsPro
             value={newChannelName}
             onChange={(e) => setNewChannelName(e.target.value)}
           />
-          <Button onClick={handleCreateChannel}>
+          <Button onClick={handleCreateChannel} disabled={loading}>
             <Plus className="mr-2 h-4 w-4" />
             Create
           </Button>
@@ -119,6 +124,7 @@ const ChannelSettings = ({ club, addChannel, removeChannel }: ChannelSettingsPro
                       <Button 
                         variant="destructive"
                         onClick={() => handleDeleteChannel(channel.id, channel.name)}
+                        disabled={loading}
                       >
                         Delete Channel
                       </Button>
