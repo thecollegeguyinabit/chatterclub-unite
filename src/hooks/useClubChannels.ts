@@ -34,8 +34,7 @@ export function useClubChannels(clubId: string | null) {
           const formattedChannels: Channel[] = data.map(channel => ({
             id: channel.id,
             name: channel.name,
-            isPrivate: channel.is_private || false,
-            messages: []
+            isPrivate: channel.is_private || false
           }));
           
           setChannels(formattedChannels);
@@ -65,8 +64,7 @@ export function useClubChannels(clubId: string | null) {
             const newChannel: Channel = {
               id: payload.new.id,
               name: payload.new.name,
-              isPrivate: payload.new.is_private || false,
-              messages: []
+              isPrivate: payload.new.is_private || false
             };
             setChannels(current => [...current, newChannel]);
           } else if (payload.eventType === "DELETE") {
