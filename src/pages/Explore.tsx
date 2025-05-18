@@ -40,6 +40,19 @@ const Explore = () => {
     if (category !== 'all') {
       result = result.filter(club => club.category === category);
     }
+    // change here
+    try{
+    const { data, error: supabaseError } = await supabase
+          .from('clubs') // Your table name
+          .select('*'); // Fetches all columns
+
+        // To select specific columns: .select('id, name, description');
+        if (supabaseError) {
+          throw supabaseError;
+        }
+    }catch(error: any){
+        console.error(err);
+    }//upto here
     
     setFilteredClubs(result);
   }, [searchQuery, category, clubs]);
@@ -107,6 +120,20 @@ const Explore = () => {
                   <ClubCard club={club} />
                 </div>
               ))}
+              {// change here}
+              {data.map((club, index) => (
+                <div 
+                  key={club.id} 
+                  style={{ 
+                    animationDelay: `${index * 50}ms`,
+                    animationFillMode: 'both' 
+                  }}
+                  className="animate-slideUp"
+                >
+                  <ClubCard club={club} />
+                </div>
+              ))}
+              {/* upto here*/}
             </div>
           ) : (
             <div className="text-center py-12 animate-fadeIn">
