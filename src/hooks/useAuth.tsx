@@ -1,3 +1,3 @@
 
-// Re-export the useAuth hook from AuthContext
+// Re-export the useAuth hook directly from AuthContext
 export { useAuth } from '@/context/AuthContext';

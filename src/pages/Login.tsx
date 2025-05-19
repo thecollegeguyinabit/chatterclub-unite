@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Chrome } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
 const loginSchema = z.object({
@@ -34,12 +34,13 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const { signIn, user } = useAuth();
   
-  // Redirect if already logged in
-  if (user) {
-    const from = (location.state as { from?: string })?.from || '/my-clubs';
-    navigate(from, { replace: true });
-    return null;
-  }
+  // Only redirect once on initial load if user is already authenticated
+  useEffect(() => {
+    if (user) {
+      const from = (location.state as { from?: string })?.from || '/my-clubs';
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, location.state]);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -53,6 +54,7 @@ const Login = () => {
     setLoading(true);
     try {
       await signIn(data.email, data.password);
+      // Navigation will happen in the useEffect above when the user state updates
     } catch (error) {
       // Error is already handled in signIn
     } finally {
@@ -79,6 +81,20 @@ const Login = () => {
       setLoading(false);
     }
   };
+
+  // If still checking authentication, show loading
+  if (user === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-clubify-600"></div>
+      </div>
+    );
+  }
+
+  // Don't render the login form if we're already authenticated
+  if (user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

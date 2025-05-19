@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 
 export const ProtectedRoute = () => {
@@ -10,7 +10,7 @@ export const ProtectedRoute = () => {
 
   useEffect(() => {
     if (!loading && !user) {
-      // Redirect to login if not authenticated
+      // Only redirect if we're not loading and there's no user
       navigate('/login', { state: { from: location.pathname } });
     }
   }, [user, loading, navigate, location]);
