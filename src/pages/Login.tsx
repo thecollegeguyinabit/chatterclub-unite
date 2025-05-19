@@ -1,7 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AuthCard } from '@/components/AuthCard';
@@ -18,7 +19,6 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Chrome } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -29,17 +29,15 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const { signIn, user, loading: authLoading } = useAuth();
-  
-  useEffect(() => {
-    if (!authLoading && user) {
-      const from = (location.state as { from?: string })?.from || '/my-clubs';
-      navigate(from, { replace: true });
-    }
-  }, [user, authLoading, navigate, location.state]);
+  const { session } = useAuth();
+
+  // Redirect if already logged in
+  if (session) {
+    navigate('/my-clubs');
+    return null;
+  }
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -50,21 +48,25 @@ const Login = () => {
   });
 
   const handleEmailLogin = async (data: LoginFormData) => {
-    if (loading) return;
-    
     setLoading(true);
-    try {
-      await signIn(data.email, data.password);
-    } catch (error) {
-      // Error is already handled in signIn
-    } finally {
-      setLoading(false);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password
+    });
+
+    if (error) {
+      toast({
+        title: 'Login Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } else {
+      navigate('/my-clubs');
     }
+    setLoading(false);
   };
 
   const handleGoogleLogin = async () => {
-    if (loading) return;
-    
     setLoading(true);
     
     const { error } = await supabase.auth.signInWithOAuth({
@@ -83,20 +85,6 @@ const Login = () => {
       setLoading(false);
     }
   };
-
-  // If still checking authentication, show loading
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-clubify-600"></div>
-      </div>
-    );
-  }
-
-  // If already authenticated, don't render the login form
-  if (user) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

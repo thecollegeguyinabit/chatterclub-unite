@@ -1,6 +1,6 @@
+
 import { useState, useEffect } from 'react';
 import { useClubify } from '@/context/ClubifyContext';
-import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import ClubCard from '@/components/ClubCard';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,6 @@ interface DbClub {
 
 const Explore = () => {
   const { clubs, userClubs } = useClubify();
-  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState('all');
   const [filteredClubs, setFilteredClubs] = useState(clubs);
@@ -56,11 +55,8 @@ const Explore = () => {
       }
     };
     
-    // Only fetch clubs if user is authenticated
-    if (user) {
-      fetchClubs();
-    }
-  }, [user]);
+    fetchClubs();
+  }, []);
   
   useEffect(() => {
     let result = clubs;
@@ -131,7 +127,7 @@ const Explore = () => {
             </div>
           </div>
           
-          {filteredClubs.length > 0 || dbClubs.length > 0 ? (
+          {filteredClubs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredClubs.map((club, index) => (
                 <div 

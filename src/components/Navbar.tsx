@@ -1,5 +1,6 @@
 
 import { Link } from 'react-router-dom';
+import { useClubify } from '@/context/ClubifyContext';
 import { Button } from '@/components/ui/button';
 import { LogOut, Menu } from 'lucide-react';
 import { useState } from 'react';
@@ -9,10 +10,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/context/AuthContext';
 
 const Navbar = () => {
-  const { user, signOut } = useAuth();
+  const { currentUser, logout, isAuthenticated } = useClubify();
   const [isOpen, setIsOpen] = useState(false);
 
   const navLinks = [
@@ -28,11 +28,6 @@ const Navbar = () => {
       .join('')
       .toUpperCase();
   };
-
-  const userDisplayName = user?.user_metadata?.name || '';
-  const userEmail = user?.email || '';
-  const userAvatar = user?.user_metadata?.avatar_url || '';
-  const isAuthenticated = !!user;
 
   return (
     <header className="w-full fixed top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-100 shadow-sm">
@@ -73,13 +68,13 @@ const Navbar = () => {
                 </Link>
                 <div className="flex items-center gap-2">
                   <Avatar className="h-8 w-8 border border-gray-200">
-                    <AvatarImage src={userAvatar} alt={userDisplayName} />
-                    <AvatarFallback>{userDisplayName ? getInitials(userDisplayName) : 'U'}</AvatarFallback>
+                    <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
+                    <AvatarFallback>{currentUser?.name ? getInitials(currentUser.name) : 'U'}</AvatarFallback>
                   </Avatar>
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => signOut()}
+                    onClick={logout}
                     className="text-gray-500 hover:text-gray-700"
                   >
                     <LogOut className="h-4 w-4" />
@@ -97,12 +92,12 @@ const Navbar = () => {
                   <div className="flex flex-col h-full">
                     <div className="flex items-center gap-4 mb-6 mt-6">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={userAvatar} alt={userDisplayName} />
-                        <AvatarFallback>{userDisplayName ? getInitials(userDisplayName) : 'U'}</AvatarFallback>
+                        <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
+                        <AvatarFallback>{currentUser?.name ? getInitials(currentUser.name) : 'U'}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="font-medium">{userDisplayName}</span>
-                        <span className="text-sm text-gray-500">{userEmail}</span>
+                        <span className="font-medium">{currentUser?.name}</span>
+                        <span className="text-sm text-gray-500">{currentUser?.email}</span>
                       </div>
                     </div>
                     
@@ -137,7 +132,7 @@ const Navbar = () => {
                       <Button
                         variant="outline"
                         onClick={() => {
-                          signOut();
+                          logout();
                           setIsOpen(false);
                         }}
                         className="w-full justify-start"
