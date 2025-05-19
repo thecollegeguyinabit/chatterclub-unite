@@ -1,8 +1,7 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AuthCard } from '@/components/AuthCard';
@@ -18,7 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Chrome } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -29,13 +29,15 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const { session } = useAuth();
-
+  const { signIn, user } = useAuth();
+  
   // Redirect if already logged in
-  if (session) {
-    navigate('/my-clubs');
+  if (user) {
+    const from = (location.state as { from?: string })?.from || '/my-clubs';
+    navigate(from, { replace: true });
     return null;
   }
 
@@ -49,21 +51,13 @@ const Login = () => {
 
   const handleEmailLogin = async (data: LoginFormData) => {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password
-    });
-
-    if (error) {
-      toast({
-        title: 'Login Error',
-        description: error.message,
-        variant: 'destructive'
-      });
-    } else {
-      navigate('/my-clubs');
+    try {
+      await signIn(data.email, data.password);
+    } catch (error) {
+      // Error is already handled in signIn
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleGoogleLogin = async () => {

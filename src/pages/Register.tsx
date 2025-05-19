@@ -1,12 +1,11 @@
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AuthCard } from '@/components/AuthCard';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthContext';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -16,10 +15,10 @@ const Register = () => {
   
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { session } = useAuth();
+  const { signUp, user } = useAuth();
   
   // Redirect if already authenticated
-  if (session) {
+  if (user) {
     navigate('/my-clubs');
     return null;
   }
@@ -39,29 +38,9 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Account created",
-        description: "Your account has been successfully created!"
-      });
-      navigate('/my-clubs');
-    } catch (error: any) {
-      toast({
-        title: "Registration failed",
-        description: error.message || "There was an error creating your account. Please try again.",
-        variant: "destructive"
-      });
+      await signUp(email, password, name);
+    } catch (error) {
+      // Error is already handled in signUp
     } finally {
       setIsLoading(false);
     }
