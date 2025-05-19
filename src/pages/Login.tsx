@@ -32,15 +32,14 @@ const Login = () => {
   const location = useLocation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const { signIn, user } = useAuth();
+  const { signIn, user, loading: authLoading } = useAuth();
   
-  // Only redirect once on initial load if user is already authenticated
   useEffect(() => {
-    if (user) {
+    if (!authLoading && user) {
       const from = (location.state as { from?: string })?.from || '/my-clubs';
       navigate(from, { replace: true });
     }
-  }, [user, navigate, location.state]);
+  }, [user, authLoading, navigate, location.state]);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -51,10 +50,11 @@ const Login = () => {
   });
 
   const handleEmailLogin = async (data: LoginFormData) => {
+    if (loading) return;
+    
     setLoading(true);
     try {
       await signIn(data.email, data.password);
-      // Navigation will happen in the useEffect above when the user state updates
     } catch (error) {
       // Error is already handled in signIn
     } finally {
@@ -63,6 +63,8 @@ const Login = () => {
   };
 
   const handleGoogleLogin = async () => {
+    if (loading) return;
+    
     setLoading(true);
     
     const { error } = await supabase.auth.signInWithOAuth({
@@ -83,7 +85,7 @@ const Login = () => {
   };
 
   // If still checking authentication, show loading
-  if (user === undefined) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-clubify-600"></div>
@@ -91,7 +93,7 @@ const Login = () => {
     );
   }
 
-  // Don't render the login form if we're already authenticated
+  // If already authenticated, don't render the login form
   if (user) {
     return null;
   }

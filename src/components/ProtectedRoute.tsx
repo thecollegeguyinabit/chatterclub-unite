@@ -9,13 +9,13 @@ export const ProtectedRoute = () => {
   const location = useLocation();
 
   useEffect(() => {
-    if (!loading && !user) {
-      // Only redirect if we're not loading and there's no user
+    if (!loading && user === null) {
+      // Only redirect if we're not loading and the user is explicitly null (not authenticated)
       navigate('/login', { state: { from: location.pathname } });
     }
   }, [user, loading, navigate, location]);
 
-  // Show nothing while loading
+  // Show loading while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
