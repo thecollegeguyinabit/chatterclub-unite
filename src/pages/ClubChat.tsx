@@ -11,6 +11,7 @@ import ChatInput from "@/components/ChatInput";
 import MessageList from "@/components/MessageList";
 import { Button } from "@/components/ui/button";
 import { useChannelMessages } from "@/hooks/useChannelMessages";
+import { useToast } from "@/hooks/use-toast";
 
 // Temporary, should match Message shape expected by MessageList
 function mapDbMessageToContextMsg(dbMsg) {
@@ -30,13 +31,13 @@ const ClubChat = () => {
     activeChannel,
     setActiveClub,
     setActiveChannel,
-    sendMessage,
     currentUser,
   } = useClubify();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   // Use new hook for Supabase-backed messages
-  const { messages: dbMessages, loading } = useChannelMessages(
+  const { messages: dbMessages, loading, refetch } = useChannelMessages(
     activeClub?.id || null,
     activeChannel?.id || null
   );
@@ -89,6 +90,11 @@ const ClubChat = () => {
 
     if (error) {
       console.error("File upload failed:", error);
+      toast({
+        title: "File upload failed",
+        description: error.message,
+        variant: "destructive"
+      });
       return;
     }
 
@@ -107,6 +113,11 @@ const ClubChat = () => {
 
     if (metaError) {
       console.error("Failed to store file metadata:", metaError);
+      toast({
+        title: "Failed to store file metadata",
+        description: metaError.message,
+        variant: "destructive"
+      });
     }
 
     let messageText;
@@ -115,7 +126,7 @@ const ClubChat = () => {
     } else {
       messageText = `[${file.name}](${fileUrl})`;
     }
-    // Use the new sendMessageToSupabase function
+    // Use the sendMessageToSupabase function
     await sendMessageToSupabase(messageText);
   };
 
@@ -123,16 +134,32 @@ const ClubChat = () => {
   const sendMessageToSupabase = async (msg: string) => {
     if (!currentUser || !activeClub || !activeChannel) return;
 
-    const { error } = await supabase.from("messages").insert({
+    console.log("Sending message to Supabase:", {
+      club_id: activeClub.id,
+      channel_id: activeChannel.id,
+      sender_id: currentUser.id,
+      text: msg
+    });
+
+    const { data, error } = await supabase.from("messages").insert({
       club_id: activeClub.id,
       channel_id: activeChannel.id,
       sender_id: currentUser.id,
       text: msg,
-    });
+    }).select();
+    
     if (error) {
       console.error("Failed to send message:", error);
+      toast({
+        title: "Failed to send message",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      console.log("Message sent successfully:", data);
+      // Optionally refetch messages to ensure UI is updated
+      // refetch();
     }
-    // Real-time will auto-update UI
   };
 
   return (

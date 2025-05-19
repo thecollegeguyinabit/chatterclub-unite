@@ -1,6 +1,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "./use-toast";
 
 type MessageRow = {
   id: string;
@@ -14,6 +15,7 @@ type MessageRow = {
 export function useChannelMessages(clubId: string | null, channelId: string | null) {
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   // Fetch initial messages
   const fetchMessages = useCallback(async () => {
@@ -23,17 +25,31 @@ export function useChannelMessages(clubId: string | null, channelId: string | nu
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("club_id", clubId)
-      .eq("channel_id", channelId)
-      .order("sent_at", { ascending: true });
-    if (!error && data) {
-      setMessages(data);
+    
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("club_id", clubId)
+        .eq("channel_id", channelId)
+        .order("sent_at", { ascending: true });
+        
+      if (error) {
+        console.error("Error fetching messages:", error);
+        toast({
+          title: "Error fetching messages",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else if (data) {
+        setMessages(data);
+      }
+    } catch (err) {
+      console.error("Error in fetchMessages:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, [clubId, channelId]);
+  }, [clubId, channelId, toast]);
 
   useEffect(() => {
     fetchMessages();
@@ -43,7 +59,11 @@ export function useChannelMessages(clubId: string | null, channelId: string | nu
   useEffect(() => {
     if (!clubId || !channelId) return;
 
-    const channel = supabase.channel(`messages-${clubId}-${channelId}`)
+    const channelName = `messages-${clubId}-${channelId}`;
+    console.log(`Subscribing to channel: ${channelName}`);
+
+    const channel = supabase
+      .channel(channelName)
       .on(
         "postgres_changes",
         {
@@ -53,6 +73,8 @@ export function useChannelMessages(clubId: string | null, channelId: string | nu
           filter: `club_id=eq.${clubId},channel_id=eq.${channelId}`,
         },
         (payload) => {
+          console.log("Message event received:", payload);
+          
           if (payload.eventType === "INSERT") {
             setMessages((msgs) => [...msgs, payload.new as MessageRow]);
           }
@@ -64,9 +86,12 @@ export function useChannelMessages(clubId: string | null, channelId: string | nu
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Subscription status for ${channelName}:`, status);
+      });
 
     return () => {
+      console.log(`Unsubscribing from channel: ${channelName}`);
       supabase.removeChannel(channel);
     };
   }, [clubId, channelId]);

@@ -111,6 +111,7 @@ export type Database = {
           admin_id: string
           avatar: string
           banner: string
+          category: string
           created_at: string
           description: string
           id: string
@@ -121,6 +122,7 @@ export type Database = {
           admin_id: string
           avatar: string
           banner: string
+          category?: string
           created_at?: string
           description: string
           id?: string
@@ -131,6 +133,7 @@ export type Database = {
           admin_id?: string
           avatar?: string
           banner?: string
+          category?: string
           created_at?: string
           description?: string
           id?: string
