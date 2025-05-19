@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClubify } from '@/context/ClubifyContext';
+import { useAuth } from '@/hooks/useAuth';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Camera, Upload } from 'lucide-react';
 import { getClubSampleImage } from '@/integrations/supabase/sample-club-images';
+import { supabase } from '@/integrations/supabase/client';
 
 const categories = ['Technology', 'Academic', 'Sports', 'Arts', 'Culture', 'Community Service', 'Professional', 'Other'];
 
@@ -25,6 +27,7 @@ const CreateClub = () => {
   const { createClub } = useClubify();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -90,7 +93,74 @@ const CreateClub = () => {
     reader.readAsDataURL(file);
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const saveClubToDatabase = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication error",
+        description: "You must be logged in to create a club",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    try {
+      // Insert the club into Supabase
+      const { data: clubData, error: clubError } = await supabase
+        .from('clubs')
+        .insert({
+          name: formData.name,
+          description: formData.description,
+          category: formData.category,
+          avatar: formData.avatar,
+          banner: formData.banner,
+          admin_id: user.id,
+          members: [user.id]
+        })
+        .select()
+        .single();
+
+      if (clubError) {
+        console.error("Error saving club:", clubError);
+        toast({
+          title: "Database error",
+          description: clubError.message,
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      // Create a default "general" channel for the new club
+      const { error: channelError } = await supabase
+        .from('channels')
+        .insert({
+          name: 'general',
+          club_id: clubData.id,
+          is_private: false
+        });
+
+      if (channelError) {
+        console.error("Error creating default channel:", channelError);
+        toast({
+          title: "Error creating default channel",
+          description: channelError.message,
+          variant: "destructive"
+        });
+        // Continue anyway since the club was created successfully
+      }
+      
+      return true;
+    } catch (error: any) {
+      console.error("Unexpected error creating club:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name || !formData.description || !formData.category) {
@@ -105,23 +175,30 @@ const CreateClub = () => {
     setIsLoading(true);
     
     try {
-      createClub({
-        ...formData,
-        channels: []
-      });
+      // Save to Supabase
+      const saved = await saveClubToDatabase();
       
-      toast({
-        title: "Club created",
-        description: "Your club has been successfully created!"
-      });
-      
-      navigate('/my-clubs');
-    } catch (error) {
+      if (saved) {
+        // Also save to context for local state
+        createClub({
+          ...formData,
+          channels: []
+        });
+        
+        toast({
+          title: "Club created",
+          description: "Your club has been successfully created!"
+        });
+        
+        navigate('/my-clubs');
+      }
+    } catch (error: any) {
       toast({
         title: "Error",
         description: "There was an error creating your club. Please try again.",
         variant: "destructive"
       });
+      console.error("Error in club creation:", error);
     } finally {
       setIsLoading(false);
     }

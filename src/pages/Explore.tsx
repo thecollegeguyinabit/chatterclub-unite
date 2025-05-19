@@ -15,14 +15,48 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 
+interface DbClub {
+  id: string;
+  name: string;
+  description: string;
+  avatar: string;
+  banner: string;
+  admin_id: string;
+  members: string[];
+  category: string;
+  created_at: string;
+}
+
 const Explore = () => {
   const { clubs, userClubs } = useClubify();
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState('all');
   const [filteredClubs, setFilteredClubs] = useState(clubs);
+  const [dbClubs, setDbClubs] = useState<DbClub[]>([]);
   
   // Categories derived from the clubs data
   const categories = ['all', ...Array.from(new Set(clubs.map(club => club.category)))];
+  
+  // Fetch clubs from Supabase
+  useEffect(() => {
+    const fetchClubs = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('clubs')
+          .select('*');
+          
+        if (error) {
+          console.error("Error fetching clubs:", error);
+        } else if (data) {
+          setDbClubs(data);
+        }
+      } catch (err) {
+        console.error("Error in fetchClubs:", err);
+      }
+    };
+    
+    fetchClubs();
+  }, []);
   
   useEffect(() => {
     let result = clubs;
@@ -40,19 +74,6 @@ const Explore = () => {
     if (category !== 'all') {
       result = result.filter(club => club.category === category);
     }
-    // change here
-    try{
-    const { data, error: supabaseError } = await supabase
-          .from('clubs') // Your table name
-          .select('*'); // Fetches all columns
-
-        // To select specific columns: .select('id, name, description');
-        if (supabaseError) {
-          throw supabaseError;
-        }
-    }catch(error: any){
-        console.error(err);
-    }//upto here
     
     setFilteredClubs(result);
   }, [searchQuery, category, clubs]);
@@ -120,20 +141,30 @@ const Explore = () => {
                   <ClubCard club={club} />
                 </div>
               ))}
-              {// change here}
-              {data.map((club, index) => (
+              
+              {dbClubs.map((club, index) => (
                 <div 
                   key={club.id} 
                   style={{ 
-                    animationDelay: `${index * 50}ms`,
+                    animationDelay: `${(index + filteredClubs.length) * 50}ms`,
                     animationFillMode: 'both' 
                   }}
                   className="animate-slideUp"
                 >
-                  <ClubCard club={club} />
+                  <ClubCard club={{
+                    id: club.id,
+                    name: club.name,
+                    description: club.description,
+                    avatar: club.avatar,
+                    banner: club.banner,
+                    admin: club.admin_id,
+                    members: club.members,
+                    category: club.category,
+                    channels: [],
+                    createdAt: new Date(club.created_at)
+                  }} />
                 </div>
               ))}
-              {/* upto here*/}
             </div>
           ) : (
             <div className="text-center py-12 animate-fadeIn">
